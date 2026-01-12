@@ -47,54 +47,54 @@ const Toast = () => {
   const getStyles = (type) => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 border-green-200 text-green-800';
+        return 'bg-gradient-to-r from-aurora-300/30 to-aurora-300/20 border-aurora-300/50 text-aurora-400 shadow-glow-aurora';
       case 'error':
-        return 'bg-red-50 border-red-200 text-red-800';
+        return 'bg-gradient-to-r from-pink-accent-400/30 to-pink-accent-400/20 border-pink-accent-400/50 text-pink-accent-400 shadow-glow-pink';
       case 'warning':
-        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+        return 'bg-gradient-to-r from-lavender-400/30 to-lavender-400/20 border-lavender-400/50 text-lavender-400 shadow-glow-purple';
       case 'info':
-        return 'bg-blue-50 border-blue-200 text-blue-800';
+        return 'bg-gradient-to-r from-fresh-sky-400/30 to-fresh-sky-400/20 border-fresh-sky-400/50 text-fresh-sky-400 shadow-glow-blue';
       default:
-        return 'bg-gray-50 border-gray-200 text-gray-800';
+        return 'bg-white/20 border-white/30 text-text-secondary';
     }
   };
 
   const getIconColor = (type) => {
     switch (type) {
       case 'success':
-        return 'text-green-500';
+        return 'text-aurora-300';
       case 'error':
-        return 'text-red-500';
+        return 'text-pink-accent-400';
       case 'warning':
-        return 'text-yellow-500';
+        return 'text-lavender-400';
       case 'info':
-        return 'text-blue-500';
+        return 'text-fresh-sky-400';
       default:
-        return 'text-gray-500';
+        return 'text-text-secondary';
     }
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+    <div className="fixed top-24 right-6 z-50 flex flex-col gap-3 pointer-events-none">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, x: 100, scale: 0.8 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 100, scale: 0.8 }}
-            transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
+            initial={{ opacity: 0, x: 100, scale: 0.8, rotate: 10 }}
+            animate={{ opacity: 1, x: 0, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0, x: 100, scale: 0.8, rotate: 10 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
             className="pointer-events-auto"
           >
             <div
               className={`
-                min-w-[320px] max-w-md px-4 py-3 rounded-lg border shadow-lg
+                min-w-[360px] max-w-md px-5 py-4 rounded-2xl border backdrop-blur-sm
                 flex items-start gap-3
                 ${getStyles(toast.type)}
               `}
             >
               {/* 图标 */}
-              <div className={`flex-shrink-0 ${getIconColor(toast.type)}`}>
+              <div className={`flex-shrink-0 mt-0.5 ${getIconColor(toast.type)}`}>
                 {getIcon(toast.type)}
               </div>
 
@@ -107,12 +107,14 @@ const Toast = () => {
               </div>
 
               {/* 关闭按钮 */}
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => dispatch(removeToast(toast.id))}
-                className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+                className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         ))}

@@ -91,6 +91,7 @@ class ChatService:
                     full_response += chunk_content
                     yield {"type": "delta", "content": chunk_content}
                 elif chunk_type == "error":
+                    # 收到错误信息，直接返回，不继续处理
                     yield {"type": "error", "content": chunk_content}
                     return
             

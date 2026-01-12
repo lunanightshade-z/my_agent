@@ -109,117 +109,104 @@ const InputBox = ({ onSend, disabled }) => {
   };
 
   return (
-    <div className="border-t border-gray-200 bg-white p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Thinking 模式开关 */}
-        <div className="flex items-center gap-2 mb-3">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => dispatch(toggleThinking())}
-            className={`
-              flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200
-              ${thinkingEnabled
-                ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }
-            `}
-          >
-            <Sparkles size={16} />
-            <span>深度思考</span>
-          </motion.button>
-          {thinkingEnabled && (
-            <motion.span
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-xs text-gray-500"
+    <div className="bg-transparent space-y-3">
+      {/* Thinking 模式开关 */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => dispatch(toggleThinking())}
+        className={`
+          flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300
+          ${thinkingEnabled
+            ? 'bg-gradient-to-r from-lavender-400 to-lavender-500 text-white shadow-glow-purple'
+            : 'glass text-text-secondary hover:text-text-primary hover:bg-white/30'
+          }
+        `}
+      >
+        <Sparkles size={16} />
+        <span>深度思考</span>
+      </motion.button>
+
+      {/* 输入框 */}
+      <div className="flex gap-3 items-end relative">
+        {/* 快捷指令菜单 */}
+        <AnimatePresence>
+          {showCommands && filteredCommands.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-full left-0 mb-3 w-80 glass-lg rounded-2xl shadow-glass-lg border border-white/30 overflow-hidden z-10"
             >
-              AI 将进行更深入的思考
-            </motion.span>
+              <div className="p-3 bg-gradient-to-r from-aurora-300/20 to-fresh-sky-400/20 border-b border-white/20 flex items-center gap-2 text-sm text-text-secondary font-medium">
+                <Command size={14} />
+                <span>快捷指令</span>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                {filteredCommands.map((command, index) => (
+                  <motion.button
+                    key={command.cmd}
+                    onClick={() => handleSelectCommand(command)}
+                    className={`
+                      w-full px-4 py-3 text-left flex items-center gap-3 transition-all duration-200
+                      ${index === selectedCommandIndex ? 'bg-white/20 backdrop-blur-sm' : 'hover:bg-white/10'}
+                    `}
+                    whileHover={{ x: 4 }}
+                  >
+                    <span className="text-xl">{command.icon}</span>
+                    <div className="flex-1">
+                      <div className="font-medium text-text-primary">{command.cmd}</div>
+                      <div className="text-xs text-text-tertiary">{command.desc}</div>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+              <div className="p-2 bg-white/10 backdrop-blur-sm border-t border-white/20 text-xs text-text-tertiary text-center">
+                <span>↑↓ 选择 • Enter 确认 • Esc 关闭</span>
+              </div>
+            </motion.div>
           )}
+        </AnimatePresence>
+        
+        <div className="flex-1 relative">
+          <textarea
+            ref={textareaRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            placeholder={disabled ? '正在接收回复...' : '输入消息...（/ 快捷指令，↑↓ 历史记录，Enter 发送，Shift+Enter 换行）'}
+            rows={1}
+            className="w-full px-5 py-3.5 rounded-2xl bg-white/30 backdrop-blur-sm border border-white/40 text-text-primary placeholder-text-tertiary focus:outline-none focus:bg-white/40 focus:border-aurora-300 focus:shadow-glow-aurora resize-none transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{
+              minHeight: '48px',
+              maxHeight: '120px',
+              height: 'auto',
+            }}
+            onInput={(e) => {
+              e.target.style.height = 'auto';
+              e.target.style.height = e.target.scrollHeight + 'px';
+            }}
+          />
         </div>
 
-        {/* 输入框 */}
-        <div className="flex gap-3 items-end relative">
-          {/* 快捷指令菜单 */}
-          <AnimatePresence>
-            {showCommands && filteredCommands.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.2 }}
-                className="absolute bottom-full left-0 mb-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-10"
-              >
-                <div className="p-2 bg-gray-50 border-b border-gray-200 flex items-center gap-2 text-sm text-gray-600">
-                  <Command size={14} />
-                  <span>快捷指令</span>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {filteredCommands.map((command, index) => (
-                    <motion.button
-                      key={command.cmd}
-                      onClick={() => handleSelectCommand(command)}
-                      className={`
-                        w-full px-3 py-2 text-left flex items-center gap-3 hover:bg-mint-50 transition-colors
-                        ${index === selectedCommandIndex ? 'bg-mint-50' : ''}
-                      `}
-                      whileHover={{ x: 4 }}
-                    >
-                      <span className="text-2xl">{command.icon}</span>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-800">{command.cmd}</div>
-                        <div className="text-xs text-gray-500">{command.desc}</div>
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-                <div className="p-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
-                  <span>↑↓ 选择 • Enter 确认 • Esc 关闭</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={disabled}
-              placeholder={disabled ? '正在接收回复...' : '输入消息...（/ 快捷指令，↑↓ 历史记录，Enter 发送，Shift+Enter 换行）'}
-              rows={1}
-              className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-mint-400 resize-none transition-all duration-200 disabled:bg-gray-50 disabled:cursor-not-allowed"
-              style={{
-                minHeight: '48px',
-                maxHeight: '120px',
-                height: 'auto',
-              }}
-              onInput={(e) => {
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-              }}
-            />
-          </div>
-
-          {/* 发送按钮 */}
-          <motion.button
-            whileHover={{ scale: disabled ? 1 : 1.05 }}
-            whileTap={{ scale: disabled ? 1 : 0.95 }}
-            onClick={handleSend}
-            disabled={disabled || !inputValue.trim()}
-            className={`
-              p-3 rounded-2xl transition-all duration-200 shadow-md
-              ${disabled || !inputValue.trim()
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-mint-400 to-sky-fresh-400 text-white hover:shadow-lg'
-              }
-            `}
-          >
-            <Send size={20} />
-          </motion.button>
-        </div>
+        {/* 发送按钮 */}
+        <motion.button
+          whileHover={{ scale: disabled ? 1 : 1.1 }}
+          whileTap={{ scale: disabled ? 1 : 0.9 }}
+          onClick={handleSend}
+          disabled={disabled || !inputValue.trim()}
+          className={`
+            p-3 rounded-2xl transition-all duration-300 font-bold
+            ${disabled || !inputValue.trim()
+              ? 'bg-white/20 text-text-tertiary cursor-not-allowed'
+              : 'bg-gradient-to-r from-aurora-300 via-fresh-sky-400 to-lavender-500 text-white hover:shadow-glow-aurora shadow-floating'
+            }
+          `}
+        >
+          <Send size={20} />
+        </motion.button>
       </div>
     </div>
   );

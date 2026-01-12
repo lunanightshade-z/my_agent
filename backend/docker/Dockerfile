@@ -9,6 +9,12 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# 配置国内pip镜像源加速
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple && \
+    pip config set global.extra-index-url "https://pypi.tuna.tsinghua.edu.cn/simple" && \
+    pip config set install.trusted-host "mirrors.aliyun.com pypi.tuna.tsinghua.edu.cn" && \
+    pip install --upgrade pip setuptools wheel
+
 # 复制依赖文件
 COPY requirements.txt .
 

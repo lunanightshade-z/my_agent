@@ -8,13 +8,20 @@ from sqlalchemy.orm import sessionmaker, Session
 from app.config import settings
 
 # 创建数据库引擎
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
-    pool_size=settings.DB_POOL_SIZE if "sqlite" not in settings.DATABASE_URL else None,
-    max_overflow=settings.DB_MAX_OVERFLOW if "sqlite" not in settings.DATABASE_URL else None,
-    echo=settings.DB_ECHO,
-)
+# SQLite 不支持连接池，需要特殊处理
+if "sqlite" in settings.DATABASE_URL:
+    engine = create_engine(
+        settings.DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        echo=settings.DB_ECHO,
+    )
+else:
+    engine = create_engine(
+        settings.DATABASE_URL,
+        pool_size=settings.DB_POOL_SIZE,
+        max_overflow=settings.DB_MAX_OVERFLOW,
+        echo=settings.DB_ECHO,
+    )
 
 # 创建会话工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

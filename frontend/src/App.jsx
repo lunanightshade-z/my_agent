@@ -1,33 +1,27 @@
 /**
- * 主应用组件
- * 组合所有子组件，构建完整的聊天界面
+ * 主应用组件 - 路由配置
  */
 import React from 'react';
 import { Provider } from 'react-redux';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import store from './store/store';
-import ChatHistory from './components/ChatHistory';
-import ChatMain from './components/ChatMain';
-import Toast from './components/Toast';
+import Layout from './components/Layout';
+import Home from './pages/Home';
+import Chat from './pages/Chat';
+import Agent from './pages/Agent';
 
 function App() {
   return (
     <Provider store={store}>
-      <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-mint-50 via-white to-sky-fresh-50">
-        <div className="h-full flex">
-          {/* 左侧历史面板 */}
-          <div className="w-80 h-full">
-            <ChatHistory />
-          </div>
-
-          {/* 右侧主聊天区域 */}
-          <div className="flex-1 h-full">
-            <ChatMain />
-          </div>
-        </div>
-        
-        {/* 全局 Toast 通知 */}
-        <Toast />
-      </div>
+      <Router basename="/">
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/agent" element={<Agent />} />
+          </Route>
+        </Routes>
+      </Router>
     </Provider>
   );
 }

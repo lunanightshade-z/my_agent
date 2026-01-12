@@ -41,7 +41,16 @@ class Settings(BaseSettings):
     
     # ==================== API 配置 ====================
     API_V1_PREFIX: str = "/api"
-    CORS_ORIGINS: list = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    CORS_ORIGINS: list = [
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173",
+        "http://localhost:28888",
+        "http://127.0.0.1:28888",
+        "http://8.130.129.37:28888",
+        "http://10.0.2.28:28888",
+        "http://8.130.129.37",
+        "http://10.0.2.28"
+    ]
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: list = ["*"]
     CORS_ALLOW_HEADERS: list = ["*"]

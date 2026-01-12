@@ -85,14 +85,14 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`flex gap-3 mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}
+      transition={{ type: 'spring', stiffness: 100, damping: 10 }}
+      className={`flex gap-3 mb-6 ${isUser ? 'justify-end' : 'justify-start'}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* AI 头像（左侧） */}
       {!isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-mint-400 to-sky-fresh-400 flex items-center justify-center shadow-md">
+        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-aurora-300 via-fresh-sky-400 to-lavender-500 flex items-center justify-center shadow-glow-blue">
           <Bot size={18} className="text-white" />
         </div>
       )}
@@ -102,10 +102,10 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
         {/* 消息气泡 */}
         <div
           className={`
-            rounded-2xl px-4 py-3 shadow-sm
+            rounded-3xl px-5 py-4 shadow-floating backdrop-blur-sm transition-all duration-300
             ${isUser
-              ? 'bg-gradient-to-br from-mint-400 to-sky-fresh-400 text-white'
-              : 'bg-white border border-gray-200'
+              ? 'bg-gradient-to-r from-aurora-300 via-fresh-sky-400 to-lavender-500 text-white shadow-glow-aurora animate-jelly'
+              : 'glass-lg text-text-primary border border-white/30'
             }
           `}
         >
@@ -116,21 +116,21 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-mint-400 resize-none text-gray-800"
+                  className="w-full px-4 py-3 rounded-2xl border border-white/40 bg-white/20 backdrop-blur-sm focus:outline-none focus:border-aurora-300 focus:shadow-glow-aurora resize-none text-text-primary"
                   rows={3}
                   autoFocus
                 />
                 <div className="flex gap-2 justify-end">
                   <button
                     onClick={handleCancelEdit}
-                    className="px-3 py-1 text-sm rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                    className="px-4 py-2 text-sm rounded-lg bg-white/20 text-text-secondary hover:bg-white/30 transition-colors"
                   >
                     <X size={14} className="inline mr-1" />
                     取消
                   </button>
                   <button
                     onClick={handleSaveEdit}
-                    className="px-3 py-1 text-sm rounded-lg bg-mint-500 text-white hover:bg-mint-600 transition-colors"
+                    className="px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-aurora-300 to-fresh-sky-400 text-white hover:shadow-glow-aurora transition-all"
                   >
                     <Send size={14} className="inline mr-1" />
                     保存
@@ -149,19 +149,19 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   transition={{ duration: 0.3 }}
-                  className="mb-3 p-3 rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200"
+                  className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-lavender-300/30 to-lavender-400/20 border border-lavender-300/50 shadow-glow-purple"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Brain size={16} className="text-purple-500" />
-                    <span className="text-xs font-semibold text-purple-600">深度思考中...</span>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Brain size={16} className="text-lavender-400 animate-pulse" />
+                    <span className="text-xs font-semibold text-lavender-500">深度思考中...</span>
                   </div>
-                  <div className="text-sm text-gray-700 whitespace-pre-wrap break-words font-mono leading-relaxed">
+                  <div className="text-sm text-text-primary whitespace-pre-wrap break-words font-mono leading-relaxed">
                     {message.thinking}
                     {isThinking && (
                       <motion.span
                         animate={{ opacity: [1, 0] }}
                         transition={{ duration: 0.8, repeat: Infinity }}
-                        className="inline-block w-2 h-3 bg-purple-400 ml-1 align-middle"
+                        className="inline-block w-2 h-3 bg-lavender-400 ml-1 align-middle rounded-sm"
                       />
                     )}
                   </div>
@@ -176,12 +176,12 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                     code({ node, inline, className, children, ...props }) {
                       const match = /language-(\w+)/.exec(className || '');
                       return !inline && match ? (
-                        <div className="relative group">
+                        <div className="relative group my-3 rounded-xl overflow-hidden">
                           <SyntaxHighlighter
                             style={vscDarkPlus}
                             language={match[1]}
                             PreTag="div"
-                            className="rounded-lg my-2"
+                            className="rounded-xl"
                             {...props}
                           >
                             {String(children).replace(/\n$/, '')}
@@ -196,31 +196,31 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                                 duration: 2000,
                               }));
                             }}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded bg-gray-700 text-white text-xs hover:bg-gray-600"
+                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 rounded-lg bg-white/20 backdrop-blur-sm text-white text-xs hover:bg-white/30 font-medium"
                           >
                             <Copy size={12} className="inline mr-1" />
                             复制代码
                           </button>
                         </div>
                       ) : (
-                        <code className="bg-gray-100 text-red-600 px-1 py-0.5 rounded text-sm" {...props}>
+                        <code className="bg-white/20 text-fresh-sky-400 px-2 py-1 rounded-lg text-sm font-mono" {...props}>
                           {children}
                         </code>
                       );
                     },
                     // 段落
-                    p: ({ children }) => <p className="mb-2 last:mb-0 text-gray-800">{children}</p>,
+                    p: ({ children }) => <p className="mb-3 last:mb-0 text-text-primary leading-relaxed">{children}</p>,
                     // 标题
-                    h1: ({ children }) => <h1 className="text-xl font-bold mb-2 text-gray-900">{children}</h1>,
-                    h2: ({ children }) => <h2 className="text-lg font-bold mb-2 text-gray-900">{children}</h2>,
-                    h3: ({ children }) => <h3 className="text-base font-bold mb-2 text-gray-900">{children}</h3>,
+                    h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-text-primary gradient-text">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-lg font-bold mb-3 text-text-primary">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-base font-bold mb-2 text-text-primary">{children}</h3>,
                     // 列表
-                    ul: ({ children }) => <ul className="list-disc pl-4 mb-2 text-gray-800">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 text-gray-800">{children}</ol>,
+                    ul: ({ children }) => <ul className="list-disc pl-5 mb-3 text-text-primary space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 text-text-primary space-y-1">{children}</ol>,
                     li: ({ children }) => <li className="mb-1">{children}</li>,
                     // 链接
                     a: ({ children, href }) => (
-                      <a href={href} className="text-sky-fresh-500 hover:underline" target="_blank" rel="noopener noreferrer">
+                      <a href={href} className="text-fresh-sky-400 hover:text-aurora-300 underline transition-colors" target="_blank" rel="noopener noreferrer">
                         {children}
                       </a>
                     ),
@@ -235,7 +235,7 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                 <motion.span
                   animate={{ opacity: [1, 0] }}
                   transition={{ duration: 0.8, repeat: Infinity }}
-                  className="inline-block w-2 h-4 bg-mint-500 ml-1"
+                  className="inline-block w-2 h-4 bg-aurora-300 ml-1 rounded-sm"
                 />
               )}
             </div>
@@ -248,18 +248,18 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="flex gap-2 mt-2"
+            className="flex gap-2 mt-3"
           >
             {/* 复制按钮 */}
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/20 hover:bg-white/30 text-text-secondary hover:text-text-primary transition-all duration-300 backdrop-blur-sm"
               title="复制消息"
             >
               {copied ? (
                 <>
-                  <Check size={12} className="text-green-500" />
-                  <span className="text-green-500">已复制</span>
+                  <Check size={12} className="text-green-400" />
+                  <span className="text-green-400 font-medium">已复制</span>
                 </>
               ) : (
                 <>
@@ -273,7 +273,7 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
             {!isUser && onRegenerate && (
               <button
                 onClick={handleRegenerate}
-                className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/20 hover:bg-white/30 text-text-secondary hover:text-text-primary transition-all duration-300 backdrop-blur-sm"
                 title="重新生成回答"
               >
                 <RefreshCw size={12} />
@@ -285,7 +285,7 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
             {isUser && onEdit && (
               <button
                 onClick={handleEdit}
-                className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/20 hover:bg-white/30 text-text-secondary hover:text-text-primary transition-all duration-300 backdrop-blur-sm"
                 title="编辑消息"
               >
                 <Edit2 size={12} />
@@ -298,7 +298,7 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
 
       {/* 用户头像（右侧） */}
       {isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center shadow-md">
+        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-pink-accent-400 via-aurora-300 to-fresh-sky-400 flex items-center justify-center shadow-glow-pink">
           <User size={18} className="text-white" />
         </div>
       )}

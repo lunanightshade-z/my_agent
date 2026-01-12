@@ -52,8 +52,8 @@ export const getConversationMessages = async (conversationId) => {
  * 生成对话标题
  */
 export const generateConversationTitle = async (conversationId, firstMessage) => {
-  const response = await apiClient.post(`/conversations/${conversationId}/generate-title`, null, {
-    params: { first_message: firstMessage }
+  const response = await apiClient.post(`/conversations/${conversationId}/generate-title`, {
+    first_message: firstMessage
   });
   return response.data;
 };
@@ -62,8 +62,8 @@ export const generateConversationTitle = async (conversationId, firstMessage) =>
  * 更新对话标题
  */
 export const updateConversationTitle = async (conversationId, title) => {
-  const response = await apiClient.put(`/conversations/${conversationId}/title`, null, {
-    params: { title }
+  const response = await apiClient.put(`/conversations/${conversationId}/title`, {
+    title: title
   });
   return response.data;
 };
@@ -99,42 +99,47 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
       
       // 递归读取流
       const readStream = () => {
-        reader.read().then(({ done, value }) => {
-          if (done) {
-            onDone();
-            return;
-          }
-          
-          // 解码数据
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-          
-          lines.forEach(line => {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              try {
-                const parsed = JSON.parse(data);
-                
-                if (parsed.type === 'thinking' && parsed.content) {
-                  // 思考过程
-                  onThinking(parsed.content);
-                } else if (parsed.type === 'delta' && parsed.content) {
-                  // 回答内容
-                  onChunk(parsed.content);
-                } else if (parsed.type === 'done') {
-                  onDone();
-                } else if (parsed.type === 'error') {
-                  onError(parsed.error || '未知错误');
-                }
-              } catch (e) {
-                console.error('解析 SSE 数据失败:', e);
-              }
+        reader.read()
+          .then(({ done, value }) => {
+            if (done) {
+              onDone();
+              return;
             }
+            
+            // 解码数据
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            
+            lines.forEach(line => {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                try {
+                  const parsed = JSON.parse(data);
+                  
+                  if (parsed.type === 'thinking' && parsed.content) {
+                    // 思考过程
+                    onThinking(parsed.content);
+                  } else if (parsed.type === 'delta' && parsed.content) {
+                    // 回答内容
+                    onChunk(parsed.content);
+                  } else if (parsed.type === 'done') {
+                    onDone();
+                  } else if (parsed.type === 'error') {
+                    onError(parsed.content || parsed.error || '未知错误');
+                  }
+                } catch (e) {
+                  console.error('解析 SSE 数据失败:', e);
+                }
+              }
+            });
+            
+            // 继续读取
+            readStream();
+          })
+          .catch(error => {
+            console.error('读取流失败:', error);
+            onError(error.message || '读取流失败');
           });
-          
-          // 继续读取
-          readStream();
-        });
       };
       
       readStream();
@@ -142,15 +147,5 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
     .catch(error => {
       onError(error.message || '请求失败');
     });
-};
-
-export default {
-  createConversation,
-  getConversations,
-  deleteConversation,
-  getConversationMessages,
-  sendMessageStream,
-  generateConversationTitle,
-  updateConversationTitle,
 };
 

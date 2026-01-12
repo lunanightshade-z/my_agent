@@ -97,14 +97,14 @@ const ChatHistory = () => {
   };
 
   return (
-    <div className="h-full bg-gradient-to-br from-mint-50 to-sky-fresh-50 border-r border-mint-200 flex flex-col">
+    <div className="h-full glass-lg rounded-3xl flex flex-col overflow-hidden shadow-glass-lg">
       {/* 头部 - 新建对话按钮 */}
-      <div className="p-4 border-b border-mint-200">
+      <div className="p-4 border-b border-white/20">
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleNewChat}
-          className="w-full bg-gradient-to-r from-mint-400 to-sky-fresh-400 text-white rounded-xl py-3 px-4 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all duration-200"
+          className="w-full btn-primary flex items-center justify-center gap-2"
         >
           <Plus size={20} />
           <span className="font-medium">新建对话</span>
@@ -117,41 +117,41 @@ const ChatHistory = () => {
           {conversations.map((conv) => (
             <motion.div
               key={conv.id}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
               onClick={() => handleSelectConversation(conv.id)}
               className={`
-                group relative p-3 rounded-lg cursor-pointer transition-all duration-200
+                group relative p-3 rounded-2xl cursor-pointer transition-all duration-300
                 ${currentConversationId === conv.id
-                  ? 'bg-white shadow-md border-2 border-mint-300'
-                  : 'bg-white/50 hover:bg-white hover:shadow-sm'
+                  ? 'bg-gradient-to-r from-aurora-300/40 to-fresh-sky-400/40 border border-white/40 shadow-glow-aurora'
+                  : 'bg-white/10 hover:bg-white/20 border border-white/10'
                 }
               `}
             >
               <div className="flex items-start gap-3">
                 <MessageSquare 
                   size={18} 
-                  className={currentConversationId === conv.id ? 'text-mint-500' : 'text-gray-400'}
+                  className={currentConversationId === conv.id ? 'text-aurora-300' : 'text-text-tertiary'}
                 />
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-800 truncate">
+                  <h3 className="font-medium text-text-primary truncate">
                     {conv.title}
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-text-tertiary mt-1">
                     {formatTime(conv.updated_at)}
                   </p>
                 </div>
                 
                 {/* 删除按钮 */}
                 <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.85 }}
                   onClick={(e) => handleDeleteConversation(conv.id, e)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 rounded"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-pink-accent-400/20 rounded-lg"
                 >
-                  <Trash2 size={16} className="text-red-500" />
+                  <Trash2 size={16} className="text-pink-accent-400" />
                 </motion.button>
               </div>
             </motion.div>
@@ -160,11 +160,15 @@ const ChatHistory = () => {
 
         {/* 空状态 */}
         {conversations.length === 0 && (
-          <div className="text-center py-8 text-gray-400">
-            <MessageSquare size={48} className="mx-auto mb-3 opacity-30" />
+          <motion.div
+            className="text-center py-12 text-text-tertiary"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <MessageSquare size={48} className="mx-auto mb-3 opacity-20" />
             <p className="text-sm">暂无对话历史</p>
             <p className="text-xs mt-1">点击上方按钮创建新对话</p>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>
