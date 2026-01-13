@@ -7,57 +7,42 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 清新系列 - 极光配色
-        'aurora': {
-          50: '#f0fdf9',
-          100: '#dcfce7',
-          200: '#86efac',
-          300: '#6EE7B7',
-          400: '#4ade80',
-          500: '#22c55e',
+        // 高级黑色系主题 - 金色强调
+        elite: {
+          50: '#faf8f3',
+          100: '#f5f1e8',
+          300: '#e6dcc2',
+          400: '#d4c5a0',
+          500: '#b8a986',
+          600: '#9d9270',
+          gold: '#d4af37',
+          champagne: '#e8d9c3',
+          copper: '#b87333',
+          rose: '#d4a5a5',
         },
-        'fresh-sky': {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#3B82F6',
-          500: '#0ea5e9',
+        // 黑色背景
+        dark: {
+          bg: '#0f0f0f',
+          surface: '#1a1a1a',
+          card: '#262626',
         },
-        'lavender': {
-          50: '#faf5ff',
-          100: '#f3e8ff',
-          200: '#e9d5ff',
-          300: '#d8b4fe',
-          400: '#c084fc',
-          500: '#9333EA',
-        },
-        // 亮点色
-        'pink-accent': {
-          400: '#F472B6',
-          500: '#ec4899',
-        },
-        // 中性色 - 深蓝
-        'slate-dark': {
-          900: '#1e293b',
-          800: '#334155',
-        }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['Fira Code', 'Monaco', 'Courier New', 'monospace'],
       },
       boxShadow: {
-        // 液态玻璃投影
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-        'glass-lg': '0 20px 40px 0 rgba(31, 38, 135, 0.2)',
-        // 悬浮投影
-        'floating': '0 10px 30px -5px rgba(0, 0, 0, 0.1)',
-        'floating-lg': '0 20px 50px -10px rgba(0, 0, 0, 0.15)',
-        // 彩色光晕
-        'glow-aurora': '0 0 20px rgba(110, 231, 183, 0.4)',
-        'glow-blue': '0 0 20px rgba(59, 130, 246, 0.4)',
-        'glow-purple': '0 0 20px rgba(147, 51, 234, 0.4)',
-        'glow-pink': '0 0 20px rgba(244, 114, 182, 0.4)',
+        // 玻璃态阴影
+        glass: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+        'glass-lg': '0 20px 40px 0 rgba(0, 0, 0, 0.4)',
+        // 悬浮阴影
+        floating: '0 10px 30px -5px rgba(0, 0, 0, 0.5)',
+        'floating-lg': '0 20px 50px -10px rgba(0, 0, 0, 0.6)',
+        // 金色光晕
+        'glow-gold': '0 0 20px rgba(212, 175, 55, 0.3)',
+        'glow-champagne': '0 0 20px rgba(232, 217, 195, 0.2)',
+        neon: '0 0 20px rgba(212, 175, 55, 0.2)',
+        'neon-glow': '0 0 40px rgba(212, 175, 55, 0.3)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
@@ -68,6 +53,8 @@ export default {
         'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
         'shimmer': 'shimmer 3s ease-in-out infinite',
         'jelly': 'jelly 0.4s ease-in-out',
+        'spin-slow': 'spin 20s linear infinite',
+        'bounce-slow': 'bounce 3s infinite ease-in-out',
       },
       keyframes: {
         fadeIn: {
@@ -87,8 +74,8 @@ export default {
           '50%': { transform: 'translateY(-10px)' },
         },
         pulseGlow: {
-          '0%, 100%': { boxShadow: '0 0 10px rgba(110, 231, 183, 0.4)' },
-          '50%': { boxShadow: '0 0 30px rgba(110, 231, 183, 0.8)' },
+          '0%, 100%': { boxShadow: '0 0 10px rgba(212, 175, 55, 0.3)' },
+          '50%': { boxShadow: '0 0 30px rgba(212, 175, 55, 0.6)' },
         },
         shimmer: {
           '0%, 100%': { backgroundPosition: '0% 50%' },

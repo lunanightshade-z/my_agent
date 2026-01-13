@@ -4,7 +4,7 @@
  */
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Plus, MessageSquare, Trash2 } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   setConversations,
@@ -60,6 +60,10 @@ const ChatHistory = () => {
       dispatch(setCurrentConversation(convId));
       const messages = await getConversationMessages(convId);
       dispatch(setMessages(messages));
+      
+      // 重新加载会话列表以获取最新信息（标题、更新时间等）
+      const updatedConvs = await getConversations();
+      dispatch(setConversations(updatedConvs));
     } catch (error) {
       console.error('加载消息失败:', error);
     } finally {
@@ -97,22 +101,34 @@ const ChatHistory = () => {
   };
 
   return (
-    <div className="h-full glass-lg rounded-3xl flex flex-col overflow-hidden shadow-glass-lg">
+    <div className="h-full rounded-3xl flex flex-col overflow-hidden shadow-2xl relative z-10"
+      style={{
+        background: 'rgba(255, 255, 255, 0.08)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(212, 175, 55, 0.2)'
+      }}
+    >
       {/* 头部 - 新建对话按钮 */}
-      <div className="p-4 border-b border-white/20">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleNewChat}
-          className="w-full btn-primary flex items-center justify-center gap-2"
-        >
-          <Plus size={20} />
-          <span className="font-medium">新建对话</span>
-        </motion.button>
+      <div className="p-6 border-b border-white/10 flex justify-between items-center">
+        <h2 className="text-gray-200 font-light tracking-widest text-sm uppercase">Memory Stream</h2>
       </div>
+      
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={handleNewChat}
+        className="mx-4 mt-4 py-3 rounded-xl border border-dashed border-white/20 text-gray-400 text-xs hover:border-elite-gold/50 hover:text-elite-gold transition-all flex items-center justify-center gap-2"
+      >
+        <Plus size={14} />
+        <span className="font-medium">新对话</span>
+      </motion.button>
 
       {/* 会话列表 */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(255, 255, 255, 0.1) transparent'
+      }}>
         <AnimatePresence>
           {conversations.map((conv) => (
             <motion.div
@@ -122,38 +138,40 @@ const ChatHistory = () => {
               exit={{ opacity: 0, x: -20 }}
               transition={{ type: 'spring', stiffness: 200, damping: 20 }}
               onClick={() => handleSelectConversation(conv.id)}
-              className={`
-                group relative p-3 rounded-2xl cursor-pointer transition-all duration-300
-                ${currentConversationId === conv.id
-                  ? 'bg-gradient-to-r from-aurora-300/40 to-fresh-sky-400/40 border border-white/40 shadow-glow-aurora'
-                  : 'bg-white/10 hover:bg-white/20 border border-white/10'
-                }
-              `}
+              className="group p-4 rounded-xl bg-white/0 hover:bg-white/5 cursor-pointer transition-all border border-transparent hover:border-white/10 relative overflow-hidden"
             >
-              <div className="flex items-start gap-3">
-                <MessageSquare 
-                  size={18} 
-                  className={currentConversationId === conv.id ? 'text-aurora-300' : 'text-text-tertiary'}
-                />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-text-primary truncate">
-                    {conv.title}
-                  </h3>
-                  <p className="text-xs text-text-tertiary mt-1">
-                    {formatTime(conv.updated_at)}
-                  </p>
-                </div>
-                
-                {/* 删除按钮 */}
-                <motion.button
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.85 }}
-                  onClick={(e) => handleDeleteConversation(conv.id, e)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-pink-accent-400/20 rounded-lg"
-                >
-                  <Trash2 size={16} className="text-pink-accent-400" />
-                </motion.button>
+              {/* 左侧强调线 - 始终显示,hover和选中时有不同效果 */}
+              <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all ${
+                currentConversationId === conv.id 
+                  ? 'bg-elite-gold/50 translate-x-0' 
+                  : 'bg-elite-gold/50 -translate-x-full group-hover:translate-x-0'
+              }`} />
+              
+              <div className="text-xs mb-1 font-mono flex items-center gap-2">
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  currentConversationId === conv.id ? 'bg-elite-gold animate-pulse' : 'bg-gray-600'
+                }`}></span>
+                <span className={currentConversationId === conv.id ? 'text-elite-gold' : 'text-gray-600'}>
+                  {currentConversationId === conv.id ? 'ACTIVE' : 'MEMORY'}
+                </span>
               </div>
+              
+              <h3 className="text-gray-300 text-sm font-medium line-clamp-1 group-hover:text-white transition-colors">
+                {conv.title}
+              </h3>
+              <p className="text-gray-600 text-xs mt-2 font-mono">
+                {formatTime(conv.updated_at)}
+              </p>
+              
+              {/* 删除按钮 */}
+              <motion.button
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.85 }}
+                onClick={(e) => handleDeleteConversation(conv.id, e)}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-elite-rose/20 rounded-lg"
+              >
+                <Trash2 size={14} className="text-elite-rose" />
+              </motion.button>
             </motion.div>
           ))}
         </AnimatePresence>
@@ -161,15 +179,26 @@ const ChatHistory = () => {
         {/* 空状态 */}
         {conversations.length === 0 && (
           <motion.div
-            className="text-center py-12 text-text-tertiary"
+            className="text-center py-12 text-gray-500"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
             <MessageSquare size={48} className="mx-auto mb-3 opacity-20" />
-            <p className="text-sm">暂无对话历史</p>
-            <p className="text-xs mt-1">点击上方按钮创建新对话</p>
+            <p className="text-sm font-mono">暂无对话历史</p>
+            <p className="text-xs mt-1 text-gray-600">点击上方按钮创建新对话</p>
           </motion.div>
         )}
+      </div>
+      
+      {/* 底部装饰 */}
+      <div className="p-4 bg-gradient-to-t from-black/20 to-transparent">
+        <div className="text-center text-[10px] text-gray-600 font-mono">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <Activity size={10} className="text-elite-gold animate-pulse" />
+            <span>NEURAL SYNC</span>
+          </div>
+          <span className="text-gray-700">{conversations.length} STREAMS ACTIVE</span>
+        </div>
       </div>
     </div>
   );

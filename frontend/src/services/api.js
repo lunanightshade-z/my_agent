@@ -72,11 +72,13 @@ export const updateConversationTitle = async (conversationId, title) => {
 
 /**
  * 发送聊天消息（流式）
- * 使用 EventSource 处理 SSE
+ * 使用 fetch 处理 SSE 流式响应
  */
 export const sendMessageStream = (conversationId, message, thinkingEnabled, onThinking, onChunk, onDone, onError) => {
   // 使用 fetch 发送 POST 请求，然后处理流式响应
   const url = `${API_BASE_URL}/chat/stream`;
+  
+  let buffer = ''; // 用于累积不完整的数据块
   
   fetch(url, {
     method: 'POST',
@@ -91,7 +93,13 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
   })
     .then(response => {
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        return response.text().then(text => {
+          throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+        });
+      }
+      
+      if (!response.body) {
+        throw new Error('响应体为空');
       }
       
       const reader = response.body.getReader();
@@ -102,35 +110,27 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
         reader.read()
           .then(({ done, value }) => {
             if (done) {
+              // 处理剩余的缓冲区数据
+              if (buffer.trim()) {
+                processBuffer(buffer);
+                buffer = '';
+              }
               onDone();
               return;
             }
             
-            // 解码数据
+            // 解码数据并添加到缓冲区
             const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
+            buffer += chunk;
             
-            lines.forEach(line => {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                try {
-                  const parsed = JSON.parse(data);
-                  
-                  if (parsed.type === 'thinking' && parsed.content) {
-                    // 思考过程
-                    onThinking(parsed.content);
-                  } else if (parsed.type === 'delta' && parsed.content) {
-                    // 回答内容
-                    onChunk(parsed.content);
-                  } else if (parsed.type === 'done') {
-                    onDone();
-                  } else if (parsed.type === 'error') {
-                    onError(parsed.content || parsed.error || '未知错误');
-                  }
-                } catch (e) {
-                  console.error('解析 SSE 数据失败:', e);
-                }
-              }
+            // 处理完整的 SSE 消息（以 \n\n 分隔）
+            const parts = buffer.split('\n\n');
+            // 保留最后一个可能不完整的部分
+            buffer = parts.pop() || '';
+            
+            // 处理每个完整的 SSE 消息
+            parts.forEach(part => {
+              processBuffer(part);
             });
             
             // 继续读取
@@ -142,9 +142,46 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
           });
       };
       
+      // 处理 SSE 数据缓冲区
+      const processBuffer = (data) => {
+        const lines = data.split('\n');
+        
+        lines.forEach(line => {
+          line = line.trim();
+          if (!line) return;
+          
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) return;
+            
+            try {
+              const parsed = JSON.parse(jsonStr);
+              
+              if (parsed.type === 'thinking' && parsed.content !== undefined) {
+                // 思考过程
+                onThinking(parsed.content);
+              } else if (parsed.type === 'delta' && parsed.content !== undefined) {
+                // 回答内容增量
+                onChunk(parsed.content);
+              } else if (parsed.type === 'done') {
+                // 完成信号
+                onDone();
+              } else if (parsed.type === 'error') {
+                // 错误信息
+                onError(parsed.content || parsed.error || '未知错误');
+              }
+            } catch (e) {
+              console.error('解析 SSE 数据失败:', e, '原始数据:', jsonStr);
+              // 不抛出错误，继续处理其他数据
+            }
+          }
+        });
+      };
+      
       readStream();
     })
     .catch(error => {
+      console.error('请求失败:', error);
       onError(error.message || '请求失败');
     });
 };

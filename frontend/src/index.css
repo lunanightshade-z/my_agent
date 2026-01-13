@@ -2,9 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ======================== CSS 变量系统 ======================== */
+/* ======================== 设计令牌系统注入 ======================== */
 :root {
-  /* 亮色模式 */
+  /* 背景颜色 - 精致黑色系 */
+  --color-bg-primary: #0f0f0f;
+  --color-bg-secondary: #1a1a1a;
+  --color-bg-tertiary: #262626;
+  
+  /* 主题颜色 - 金色系 */
+  --color-primary: #d4af37;
+  --color-accent-gold: #d4af37;
+  --color-accent-champagne: #e8d9c3;
+  
+  /* 中立色 */
+  --text-primary: #f0ede5;
+  --text-secondary: #b8b8b8;
+  --text-tertiary: #808080;
+  
+  /* 间距 */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  
+  /* 动画 */
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 500ms;
+}
+
+/* ======================== CSS 变量系统（向后兼容） ======================== */
+:root {
+  /* 精致黑色主题 */
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: rgba(255, 255, 255, 0.08);
+  
+  --text-primary: #f0ede5;
+  --text-secondary: #b8b8b8;
+  --text-tertiary: #808080;
+  
+  --border-light: rgba(255, 255, 255, 0.12);
+  --border-dark: rgba(255, 255, 255, 0.08);
+  
+  /* 金色强调 */
+  --accent-gold: #d4af37;
+  --accent-champagne: #e8d9c3;
+  --accent-copper: #b87333;
+  --accent-rose: #d4a5a5;
+  
+  /* 渐变 */
+  --gradient-gold: linear-gradient(135deg, #d4af37 0%, #e8d9c3 100%);
+  --gradient-dark: linear-gradient(135deg, #1a1a1a 0%, #262626 100%);
+  --gradient-bronze: linear-gradient(135deg, #b87333 0%, #d4af37 100%);
+}
+
+/* 亮色模式支持(可选) */
+[data-theme="light"] {
   --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
   --bg-tertiary: rgba(255, 255, 255, 0.65);
@@ -15,23 +70,6 @@
   
   --border-light: rgba(255, 255, 255, 0.5);
   --border-dark: rgba(0, 0, 0, 0.1);
-  
-  /* 渐变 */
-  --gradient-aurora: linear-gradient(135deg, #6EE7B7 0%, #3B82F6 50%, #9333EA 100%);
-  --gradient-pink: linear-gradient(135deg, #F472B6 0%, #ec4899 100%);
-}
-
-/* 暗色模式支持 (未来扩展) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-tertiary: rgba(30, 41, 59, 0.6);
-    
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --text-tertiary: #64748b;
-  }
 }
 
 /* ======================== 全局重置 ======================== */
@@ -54,7 +92,7 @@ body {
   overflow-x: hidden;
 }
 
-/* ======================== 液态背景动画 ======================== */
+/* ======================== 精致黑色背景动画 ======================== */
 body::before {
   content: '';
   position: fixed;
@@ -63,10 +101,24 @@ body::before {
   width: 100%;
   height: 100%;
   background: 
-    radial-gradient(circle at 20% 50%, rgba(110, 231, 183, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(147, 51, 234, 0.1) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(232, 217, 195, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 20%, rgba(184, 115, 51, 0.04) 0%, transparent 50%);
   animation: flowGradient 15s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 噪点纹理叠加 */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
   pointer-events: none;
   z-index: -1;
 }
@@ -80,53 +132,56 @@ body::before {
   }
 }
 
-/* ======================== 液态玻璃通用组件 ======================== */
+/* ======================== 液态玻璃通用组件 (黑色主题) ======================== */
 .glass {
-  background: var(--bg-tertiary);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .glass-lg {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .glass-card {
-  @apply glass rounded-3xl shadow-glass p-6 transition-all duration-300;
+  @apply rounded-3xl shadow-lg p-6 transition-all duration-300 backdrop-blur-sm rounded-3xl border;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(212, 175, 55, 0.2);
 }
 
 .glass-card:hover {
-  @apply shadow-glass-lg;
+  @apply shadow-xl;
+  background: rgba(255, 255, 255, 0.12);
 }
 
-/* ======================== 自定义滚动条 ======================== */
+/* ======================== 自定义滚动条 (深色主题) ======================== */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
+  background: transparent;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(110, 231, 183, 0.6), rgba(59, 130, 246, 0.6));
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(110, 231, 183, 0.8), rgba(59, 130, 246, 0.8));
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Firefox */
 * {
-  scrollbar-color: rgba(110, 231, 183, 0.6) rgba(0, 0, 0, 0.05);
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   scrollbar-width: thin;
 }
 
@@ -137,12 +192,25 @@ button, [role="button"] {
 }
 
 .btn-primary {
-  @apply bg-gradient-to-r from-aurora-300 via-fresh-sky-400 to-lavender-500 text-white font-semibold rounded-full px-8 py-3 shadow-floating hover:shadow-floating-lg hover:scale-105 active:scale-95;
+  @apply bg-gradient-to-r text-black font-semibold rounded-full px-8 py-3 shadow-lg active:scale-95;
+  background-image: linear-gradient(to right, #d4af37, #e8d9c3, #9d9270);
+  box-shadow: 0 10px 20px rgba(212, 175, 55, 0.15);
+}
+
+.btn-primary:hover {
+  @apply scale-105;
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
 }
 
 .btn-secondary {
-  @apply glass-card font-medium hover:bg-white/40;
+  @apply glass-card font-medium;
   color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .btn-icon {
@@ -151,7 +219,9 @@ button, [role="button"] {
 
 /* ======================== 输入框样式 ======================== */
 input, textarea {
-  @apply bg-white/40 backdrop-blur-sm border border-white/40 rounded-2xl px-4 py-3 outline-none transition-all duration-300;
+  @apply backdrop-blur-sm rounded-2xl px-4 py-3 outline-none transition-all duration-300;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   color: var(--text-primary);
 }
 
@@ -160,7 +230,9 @@ input::placeholder, textarea::placeholder {
 }
 
 input:focus, textarea:focus {
-  @apply bg-white/60 border-aurora-300 shadow-glow-aurora;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
 }
 
 /* ======================== Markdown 样式 ======================== */
@@ -193,25 +265,25 @@ input:focus, textarea:focus {
 
 /* ======================== 选择文本样式 ======================== */
 ::selection {
-  background: var(--gradient-aurora);
-  color: white;
+  background: rgba(212, 175, 55, 0.3);
+  color: rgb(212, 175, 55);
 }
 
 ::-moz-selection {
-  background: var(--gradient-aurora);
-  color: white;
+  background: rgba(212, 175, 55, 0.3);
+  color: rgb(212, 175, 55);
 }
 
 /* ======================== 工具类 ======================== */
 .gradient-text {
-  background: var(--gradient-aurora);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .gradient-text-pink {
-  background: var(--gradient-pink);
+  background: var(--gradient-bronze);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -249,4 +321,65 @@ input:focus, textarea:focus {
   }
 }
 
+/* ======================== 赛博朋克动画 ======================== */
+@keyframes pulse-slow {
+  0%, 100% { 
+    opacity: 0.5; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: scale(1.05); 
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s infinite ease-in-out;
+}
+
+.animate-pulse-slower {
+  animation: pulse-slow 12s infinite ease-in-out;
+}
+
+@keyframes spin-slow {
+  from { 
+    transform: rotate(0deg); 
+  }
+  to { 
+    transform: rotate(360deg); 
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+@keyframes fade-in-up {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+/* 金色脉动 - 替代 Cyan */
+@keyframes gold-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.3), 0 0 20px rgba(212, 175, 55, 0.15);
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.3);
+  }
+}
+
+.animate-gold-pulse {
+  animation: gold-pulse 2s ease-in-out infinite;
+}
 

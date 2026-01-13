@@ -17,7 +17,7 @@ const Agent = () => {
       desc: '通用对话助手，擅长问答、写作、分析。',
       icon: MessageSquare,
       status: 'online',
-      color: 'aurora',
+      color: 'gold',
     },
     {
       id: 2,
@@ -25,7 +25,7 @@ const Agent = () => {
       desc: '编程专家，帮助调试、优化和学习代码。',
       icon: Zap,
       status: 'online',
-      color: 'fresh-sky',
+      color: 'champagne',
     },
     {
       id: 3,
@@ -33,7 +33,7 @@ const Agent = () => {
       desc: '创意写手，适合故事、文案、诗歌创作。',
       icon: MessageSquare,
       status: 'online',
-      color: 'lavender',
+      color: 'copper',
     },
   ];
 
@@ -57,26 +57,26 @@ const Agent = () => {
   };
 
   const colorMap = {
-    aurora: {
-      bg: 'from-aurora-300/20 to-aurora-300/5',
-      border: 'border-aurora-300/30',
-      text: 'text-aurora-400',
-      dot: 'bg-aurora-400',
-      glow: 'glow-aurora',
+    gold: {
+      bg: 'from-elite-gold/20 to-elite-gold/5',
+      border: 'border-elite-gold/30',
+      text: 'text-elite-gold',
+      dot: 'bg-elite-gold',
+      glow: 'glow-gold',
     },
-    'fresh-sky': {
-      bg: 'from-fresh-sky-400/20 to-fresh-sky-400/5',
-      border: 'border-fresh-sky-400/30',
-      text: 'text-fresh-sky-400',
-      dot: 'bg-fresh-sky-400',
-      glow: 'glow-blue',
+    champagne: {
+      bg: 'from-elite-champagne/20 to-elite-champagne/5',
+      border: 'border-elite-champagne/30',
+      text: 'text-elite-champagne',
+      dot: 'bg-elite-champagne',
+      glow: 'glow-champagne',
     },
-    lavender: {
-      bg: 'from-lavender-400/20 to-lavender-400/5',
-      border: 'border-lavender-400/30',
-      text: 'text-lavender-400',
-      dot: 'bg-lavender-400',
-      glow: 'glow-purple',
+    copper: {
+      bg: 'from-elite-copper/20 to-elite-copper/5',
+      border: 'border-elite-copper/30',
+      text: 'text-elite-copper',
+      dot: 'bg-elite-copper',
+      glow: 'glow-gold',
     },
   };
 
@@ -169,11 +169,11 @@ const Agent = () => {
                 className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{
                   background: `radial-gradient(circle, ${
-                    agent.color === 'aurora'
-                      ? 'rgba(110, 231, 183, 0.3)'
-                      : agent.color === 'fresh-sky'
-                      ? 'rgba(59, 130, 246, 0.3)'
-                      : 'rgba(147, 51, 234, 0.3)'
+                    agent.color === 'gold'
+                      ? 'rgba(212, 175, 55, 0.3)'
+                      : agent.color === 'champagne'
+                      ? 'rgba(232, 217, 195, 0.3)'
+                      : 'rgba(184, 115, 51, 0.3)'
                   }, transparent)`,
                 }}
               />
@@ -183,7 +183,7 @@ const Agent = () => {
 
         {/* 创建自定义 Agent 卡片 */}
         <motion.div
-          className="glass-card group cursor-pointer border border-dashed border-text-tertiary hover:border-aurora-300"
+          className="glass-card group cursor-pointer border border-dashed border-text-tertiary hover:border-elite-gold"
           variants={itemVariants}
           whileHover={{
             scale: 1.05,
@@ -196,11 +196,11 @@ const Agent = () => {
         >
           <div className="h-full flex flex-col items-center justify-center text-center">
             <motion.div
-              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-aurora-300/20 to-aurora-300/5 flex items-center justify-center mb-4 group-hover:shadow-glow-aurora transition-shadow duration-300"
+              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-elite-gold/20 to-elite-gold/5 flex items-center justify-center mb-4 group-hover:shadow-glow-gold transition-shadow duration-300"
               whileHover={{ rotate: 90 }}
               transition={{ duration: 0.5 }}
             >
-              <Plus className="w-8 h-8 text-aurora-300" />
+              <Plus className="w-8 h-8 text-elite-gold" />
             </motion.div>
 
             <h3 className="text-xl font-bold mb-2 text-text-primary">
