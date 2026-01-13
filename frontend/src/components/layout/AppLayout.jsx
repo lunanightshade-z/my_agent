@@ -13,30 +13,143 @@ import ParticleBackground from '../ui/ParticleBackground.jsx';
 import ChatArea from '../composite/ChatArea.jsx';
 import InputContainer from '../composite/InputContainer.jsx';
 import Button from '../ui/Button.jsx';
+import ChatHistory from '../ChatHistory.jsx';
+import {
+  addUserMessage,
+  startStreaming,
+  appendStreamingThinking,
+  appendStreamingContent,
+  endStreaming,
+  addToast,
+  setConversations,
+  setCurrentConversation,
+} from '../../store/store';
+import {
+  createConversation,
+  getConversations,
+  generateConversationTitle,
+  sendMessageStream,
+} from '../../services/api';
 
 const AppLayout = ({ children }) => {
   const dispatch = useDispatch();
-  const { thinkingEnabled } = useSelector((state) => state.chat);
+  const { thinkingEnabled, currentConversationId, messages, isStreaming } = useSelector((state) => state.chat);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [activeArtifact, setActiveArtifact] = useState(null);
   const containerRef = useRef(null);
 
-  // 视差鼠标跟踪
+  // 视差鼠标跟踪（带防抖和优化）
   useEffect(() => {
+    let throttleTimer;
+    let lastX = 0;
+    let lastY = 0;
+
     const handleMouseMove = (e) => {
       if (!containerRef.current) return;
-      const { innerWidth, innerHeight } = window;
-      const x = (e.clientX - innerWidth / 2) / innerWidth;
-      const y = (e.clientY - innerHeight / 2) / innerHeight;
-      setMousePos({ x, y });
+
+      // 防抖：每16ms最多更新一次（60fps）
+      if (throttleTimer) return;
+
+      throttleTimer = setTimeout(() => {
+        const { innerWidth, innerHeight } = window;
+        // 只在移动距离超过5px时才更新
+        const x = (e.clientX - innerWidth / 2) / innerWidth;
+        const y = (e.clientY - innerHeight / 2) / innerHeight;
+
+        const dx = Math.abs(x - lastX);
+        const dy = Math.abs(y - lastY);
+
+        if (dx > 0.01 || dy > 0.01) {
+          lastX = x;
+          lastY = y;
+          setMousePos({ x, y });
+        }
+
+        throttleTimer = null;
+      }, 16);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (throttleTimer) clearTimeout(throttleTimer);
+    };
   }, []);
 
   const tiltStyle = {
-    transform: `perspective(1000px) rotateY(${mousePos.x * 1}deg) rotateX(${mousePos.y * -1}deg)`,
+    transform: `perspective(1000px) rotateY(${mousePos.x * 0.5}deg) rotateX(${mousePos.y * -0.5}deg)`,
+    willChange: 'transform',
+    transition: 'transform 0.1s ease-out',
+  };
+
+  // 发送消息（让 InputContainer 真正触发 API 请求）
+  const handleSendMessage = async (message) => {
+    let conversationId = currentConversationId;
+
+    // 没有选中会话时：自动创建一个会话，避免“发送无效果”
+    if (!conversationId) {
+      try {
+        const newConv = await createConversation();
+        conversationId = newConv.id;
+        dispatch(setCurrentConversation(conversationId));
+        // 刷新会话列表，左侧能立刻看到
+        const updatedConvs = await getConversations();
+        dispatch(setConversations(updatedConvs));
+      } catch (error) {
+        dispatch(
+          addToast({
+            type: 'error',
+            message: `创建对话失败: ${error?.message || error}`,
+            duration: 3000,
+          })
+        );
+        return;
+      }
+    }
+
+    const isFirstMessage = (messages || []).length === 0;
+    dispatch(addUserMessage(message));
+    dispatch(startStreaming());
+
+    sendMessageStream(
+      conversationId,
+      message,
+      thinkingEnabled,
+      (thinking) => dispatch(appendStreamingThinking(thinking)),
+      (content) => dispatch(appendStreamingContent(content)),
+      async () => {
+        dispatch(endStreaming());
+        if (isFirstMessage) {
+          try {
+            await generateConversationTitle(conversationId, message);
+            const updatedConvs = await getConversations();
+            dispatch(setConversations(updatedConvs));
+          } catch (e) {
+            // 标题生成失败不影响聊天
+            // eslint-disable-next-line no-console
+            console.error('生成标题失败:', e);
+          }
+        } else {
+          try {
+            const updatedConvs = await getConversations();
+            dispatch(setConversations(updatedConvs));
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error('刷新会话列表失败:', e);
+          }
+        }
+      },
+      (err) => {
+        dispatch(endStreaming());
+        dispatch(
+          addToast({
+            type: 'error',
+            message: `发送失败: ${err}`,
+            duration: 4000,
+          })
+        );
+      }
+    );
   };
 
   return (
@@ -82,50 +195,10 @@ const AppLayout = ({ children }) => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="hidden lg:flex flex-col w-72 backdrop-blur-2xl bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl hover:bg-white/10 transition-all duration-300 group"
+          className="hidden lg:flex flex-col w-72"
         >
-          {/* 头部 */}
-          <div className="p-5 border-b border-white/5 flex items-center gap-3 bg-gradient-to-r from-white/5 to-transparent">
-            <div className={cn(
-              'p-2 rounded-lg transition-all',
-              thinkingEnabled ? 'bg-elite-gold/20 text-elite-gold' : 'bg-elite-gold/20 text-elite-gold'
-            )}>
-              <Layers size={18} />
-            </div>
-            <span className="text-sm font-bold tracking-widest uppercase opacity-70">Memory Log</span>
-          </div>
-
-          {/* 会话列表 */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-            {[1, 2, 3, 4, 5].map((item) => (
-              <motion.div
-                key={item}
-                whileHover={{ x: 4 }}
-                className="p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-all duration-300 group/item border border-transparent hover:border-white/10"
-              >
-                <div className="text-xs text-gray-400 mb-1 flex items-center gap-2">
-                  <div
-                    className={cn(
-                      'w-1.5 h-1.5 rounded-full transition-all group-hover/item:shadow-[0_0_8px_currentColor]',
-                      thinkingEnabled ? 'bg-elite-gold' : 'bg-elite-gold'
-                    )}
-                  />
-                  <span>Session #{100 + item}</span>
-                </div>
-                <div className="text-sm truncate opacity-80 group-hover/item:opacity-100">
-                  Project Aether Design...
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* 底部操作 */}
-          <div className="p-4 border-t border-white/5 bg-black/20">
-            <button className="flex items-center gap-2 text-xs opacity-50 hover:opacity-100 transition-opacity w-full hover:text-elite-gold">
-              <MoreHorizontal size={14} />
-              <span>Archive</span>
-            </button>
-          </div>
+          {/* 使用真实会话列表（会请求 /api/conversations） */}
+          <ChatHistory />
         </motion.div>
 
         {/* 中间: 主聊天界面 */}
@@ -171,9 +244,8 @@ const AppLayout = ({ children }) => {
           {/* 输入框 */}
           <div className="p-6 bg-gradient-to-t from-black/80 to-transparent border-t border-white/5">
             <InputContainer
-              onSend={() => {
-                // 消息发送处理在 ChatArea 中
-              }}
+              onSend={handleSendMessage}
+              disabled={isStreaming}
             />
           </div>
         </motion.div>

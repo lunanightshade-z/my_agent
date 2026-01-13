@@ -16,13 +16,13 @@ RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple && \
     pip install --upgrade pip setuptools wheel
 
 # 复制依赖文件
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
 # 安装依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 复制应用代码
-COPY app/ ./app/
+COPY backend/app/ ./app/
 
 # 暴露端口
 EXPOSE 8000

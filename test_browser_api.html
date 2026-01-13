@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>前端API测试</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>前端API测试页面</h1>
+    <div id="results"></div>
+    <script>
+        const API_BASE = '/api';
+        const results = document.getElementById('results');
+        
+        async function test() {
+            let html = '<h2>测试结果：</h2>';
+            
+            // 1. 测试获取对话列表
+            try {
+                html += '<h3>1. 获取对话列表</h3>';
+                const convResponse = await fetch(`${API_BASE}/conversations`);
+                const convData = await convResponse.json();
+                html += `<p>✓ 成功获取 ${convData.conversations.length} 个对话</p>`;
+                html += `<pre>${JSON.stringify(convData, null, 2)}</pre>`;
+                
+                if (convData.conversations.length > 0) {
+                    const convId = convData.conversations[0].id;
+                    
+                    // 2. 测试获取消息历史
+                    html += '<h3>2. 获取消息历史</h3>';
+                    const msgResponse = await fetch(`${API_BASE}/conversations/${convId}/messages`);
+                    const msgData = await msgResponse.json();
+                    html += `<p>✓ 成功获取 ${msgData.messages.length} 条消息</p>`;
+                    html += `<pre>${JSON.stringify(msgData, null, 2).substring(0, 500)}...</pre>`;
+                    
+                    // 3. 测试发送消息
+                    html += '<h3>3. 测试发送消息（流式）</h3>';
+                    const chatResponse = await fetch(`${API_BASE}/chat/stream`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            conversation_id: convId,
+                            message: '测试消息',
+                            thinking_enabled: false
+                        })
+                    });
+                    
+                    if (chatResponse.ok) {
+                        html += '<p>✓ 流式响应已开始</p>';
+                        const reader = chatResponse.body.getReader();
+                        const decoder = new TextDecoder();
+                        let fullResponse = '';
+                        
+                        while (true) {
+                            const {done, value} = await reader.read();
+                            if (done) break;
+                            
+                            const chunk = decoder.decode(value);
+                            const lines = chunk.split('\n');
+                            
+                            for (const line of lines) {
+                                if (line.startsWith('data: ')) {
+                                    const jsonStr = line.slice(6).trim();
+                                    if (jsonStr) {
+                                        try {
+                                            const data = JSON.parse(jsonStr);
+                                            if (data.type === 'delta') {
+                                                fullResponse += data.content;
+                                            } else if (data.type === 'done') {
+                                                html += `<p>✓ 流式响应完成，完整回复：${fullResponse}</p>`;
+                                            }
+                                        } catch (e) {}
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        html += `<p>✗ 发送消息失败: ${chatResponse.status}</p>`;
+                    }
+                }
+            } catch (error) {
+                html += `<p>✗ 错误: ${error.message}</p>`;
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        test();
+    </script>
+</body>
+</html>

@@ -21,8 +21,10 @@ import {
   addToast,
   setMessages,
   setConversations,
+  setCurrentConversation,
+  toggleThinking,
 } from '../store/store';
-import { sendMessageStream, generateConversationTitle, getConversations } from '../services/api';
+import { sendMessageStream, generateConversationTitle, getConversations, createConversation } from '../services/api';
 
 const Chat = () => {
   const dispatch = useDispatch();
@@ -44,13 +46,25 @@ const Chat = () => {
 
   // 发送消息
   const handleSendMessage = async (message) => {
-    if (!currentConversationId) {
-      dispatch(addToast({
-        type: 'error',
-        message: '请先选择或创建一个对话',
-        duration: 3000,
-      }));
-      return;
+    let conversationId = currentConversationId;
+    
+    // 如果没有当前对话，自动创建一个
+    if (!conversationId) {
+      try {
+        const newConv = await createConversation();
+        conversationId = newConv.id;
+        dispatch(setCurrentConversation(conversationId));
+        // 刷新对话列表
+        const updatedConvs = await getConversations();
+        dispatch(setConversations(updatedConvs));
+      } catch (error) {
+        dispatch(addToast({
+          type: 'error',
+          message: `创建对话失败: ${error.message || error}`,
+          duration: 3000,
+        }));
+        return;
+      }
     }
 
     const isFirstMessage = messages.length === 0;
@@ -58,7 +72,7 @@ const Chat = () => {
     dispatch(startStreaming());
 
     sendMessageStream(
-      currentConversationId,
+      conversationId,
       message,
       thinkingEnabled,
       (thinking) => {
@@ -71,7 +85,7 @@ const Chat = () => {
         dispatch(endStreaming());
         if (isFirstMessage) {
           try {
-            await generateConversationTitle(currentConversationId, message);
+            await generateConversationTitle(conversationId, message);
             // 刷新会话列表以显示新标题
             const updatedConvs = await getConversations();
             dispatch(setConversations(updatedConvs));
@@ -319,9 +333,7 @@ const Chat = () => {
               <input
                 type="checkbox"
                 checked={thinkingEnabled}
-                onChange={() => {
-                  // 这里应该调用 toggleThinking action
-                }}
+                onChange={() => dispatch(toggleThinking())}
                 className="w-4 h-4 rounded"
               />
               <span className="text-sm text-gray-400 font-mono">

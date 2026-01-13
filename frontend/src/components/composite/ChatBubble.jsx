@@ -89,7 +89,7 @@ const ChatBubble= ({
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* 消息容器 */}
-      <div className={cn('flex flex-col max-w-[80%]', isUser && 'items-end')}>
+      <div className={cn('flex flex-col max-w-[80%] relative', isUser && 'items-end')}>
         {/* 消息头 */}
         <div
           className={cn(
@@ -264,18 +264,20 @@ const ChatBubble= ({
           )}
         </div>
 
-        {/* 操作按钮 */}
+        {/* 操作按钮 - 改进：使用绝对定位，避免推动消息气泡 */}
         {!isUser && isHovered && !isStreaming && !isEditing && (
           <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex gap-2 mt-2"
+            initial={{ opacity: 0, x: -5 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute -left-16 top-0 flex flex-col gap-1.5"
           >
             <Button
               size="xs"
               variant="ghost"
               onClick={handleCopy}
               title="复制"
+              className="hover:bg-white/10"
             >
               {copied ? (
                 <Check size={12} className="text-green-400" />
@@ -288,6 +290,7 @@ const ChatBubble= ({
               variant="ghost"
               onClick={handleRegenerate}
               title="重新生成"
+              className="hover:bg-white/10"
             >
               <RefreshCw size={12} />
             </Button>
@@ -296,15 +299,17 @@ const ChatBubble= ({
 
         {isUser && isHovered && !isStreaming && !isEditing && (
           <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex gap-2 mt-2"
+            initial={{ opacity: 0, x: 5 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute -right-16 top-0 flex flex-col gap-1.5"
           >
             <Button
               size="xs"
               variant="ghost"
               onClick={handleCopy}
               title="复制"
+              className="hover:bg-white/10"
             >
               {copied ? (
                 <Check size={12} className="text-green-400" />
@@ -318,6 +323,7 @@ const ChatBubble= ({
                 variant="ghost"
                 onClick={handleEdit}
                 title="编辑"
+                className="hover:bg-white/10"
               >
                 <Edit2 size={12} />
               </Button>

@@ -26,28 +26,12 @@ const ChatHistory = () => {
   const { conversations, currentConversationId } = useSelector((state) => state.chat);
 
   // 加载会话列表
-  useEffect(() => {
-    loadConversations();
-  }, []);
-
   const loadConversations = async () => {
     try {
       const convs = await getConversations();
       dispatch(setConversations(convs));
     } catch (error) {
       console.error('加载会话列表失败:', error);
-    }
-  };
-
-  // 创建新会话
-  const handleNewChat = async () => {
-    try {
-      const newConv = await createConversation();
-      dispatch(addConversation(newConv));
-      dispatch(setCurrentConversation(newConv.id));
-      dispatch(setMessages([]));
-    } catch (error) {
-      console.error('创建会话失败:', error);
     }
   };
 
@@ -68,6 +52,35 @@ const ChatHistory = () => {
       console.error('加载消息失败:', error);
     } finally {
       dispatch(setLoading(false));
+    }
+  };
+
+  // 加载会话列表
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  // 当对话列表加载完成且没有当前对话时，自动选择第一个对话
+  useEffect(() => {
+    if (conversations.length > 0 && !currentConversationId) {
+      handleSelectConversation(conversations[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversations.length, currentConversationId]);
+
+  // 创建新对话
+  const handleNewChat = async () => {
+    try {
+      const newConv = await createConversation();
+      dispatch(addConversation(newConv));
+      dispatch(setCurrentConversation(newConv.id));
+      dispatch(setMessages([]));
+      
+      // 重新加载会话列表以获取最新信息
+      const updatedConvs = await getConversations();
+      dispatch(setConversations(updatedConvs));
+    } catch (error) {
+      console.error('创建新对话失败:', error);
     }
   };
 
