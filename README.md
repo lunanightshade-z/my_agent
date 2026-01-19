@@ -25,6 +25,7 @@
 - 🧠 **深度思考模式**：启用thinking模式获得更深入的回答
 - 💾 **历史记录**：自动保存所有对话内容
 - 📱 **多会话管理**：支持创建、切换和删除多个对话
+- 🔒 **用户隔离**：每个访问网站的游客都有独立的ID和会话空间，数据完全隔离
 
 ## 🏗️ 技术栈
 
@@ -171,19 +172,51 @@ npm run dev
 
 所有 API 端点路径**保持不变**，前端无需修改！
 
+### 用户隔离机制
+
+系统通过 Cookie 自动为每个访问者分配唯一的用户ID（UUID），实现数据隔离：
+- 每个游客首次访问时会自动生成并保存用户ID到Cookie
+- 所有会话和消息都关联到对应的用户ID
+- 用户只能访问和操作自己的会话数据
+- Cookie有效期1年，确保用户会话持久化
+
 ### 会话管理
-- `POST /api/conversations` - 创建新对话
-- `GET /api/conversations` - 获取所有对话列表
-- `DELETE /api/conversations/{id}` - 删除对话
-- `GET /api/conversations/{id}/messages` - 获取对话消息
+- `POST /api/conversations` - 创建新对话（自动关联当前用户）
+- `GET /api/conversations` - 获取当前用户的所有对话列表
+- `DELETE /api/conversations/{id}` - 删除对话（仅限当前用户的会话）
+- `PUT /api/conversations/{id}/title` - 更新会话标题（仅限当前用户的会话）
+- `POST /api/conversations/{id}/generate-title` - 生成会话标题（仅限当前用户的会话）
+- `GET /api/conversations/{id}/messages` - 获取对话消息（仅限当前用户的会话）
 
 ### 聊天
-- `POST /api/chat/stream` - 流式聊天（SSE）
+- `POST /api/chat/stream` - 流式聊天（SSE，仅限当前用户的会话）
 
 ### 文档和监控
 - `GET /docs` - Swagger API 文档
 - `GET /health` - 健康检查
 - `GET /` - API 信息
+
+## 🔄 数据库迁移（重要）
+
+**如果您是从旧版本升级，需要执行数据库迁移以添加用户ID字段：**
+
+### 方法一：自动迁移（推荐）
+
+```bash
+cd backend
+python migrate_add_user_id.py
+```
+
+### 方法二：重新创建数据库（开发环境）
+
+如果数据库中没有重要数据，可以直接删除并重新创建：
+
+```bash
+rm backend/chat_history.db
+# 重新启动后端，数据库会自动创建
+```
+
+**详细迁移说明请参考：** [数据库迁移指南](docs/DATABASE_MIGRATION_USER_ID.md)
 
 ## 🐛 故障排查
 
@@ -191,6 +224,7 @@ npm run dev
 - 确保已安装所有 Python 依赖：`pip install -r backend/requirements.txt`
 - 检查 `.env` 文件中的 `ZHIPU_API_KEY` 是否正确
 - 确认端口 8000 未被占用
+- 如果遇到数据库相关错误，请执行数据库迁移（见上方）
 
 ### 前端无法连接后端
 - 确认后端服务已启动并运行在 `http://localhost:8000`
@@ -233,8 +267,8 @@ http://localhost:8000/docs
 使用 Docker Compose 快速部署：
 
 ```bash
-cd backend/docker
-docker-compose up -d
+cd backend/`docker`
+docker compose up -d --build 
 ```
 
 详见 [Docker 部署文档](backend/docker/README.md)

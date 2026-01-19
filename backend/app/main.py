@@ -30,9 +30,70 @@ async def lifespan(app: FastAPI):
         environment=settings.ENVIRONMENT
     )
     
-    # 创建数据库表
+    # 创建数据库表（如果不存在）
     Base.metadata.create_all(bind=engine)
     logger.info("database_tables_created")
+    
+    # 检查并迁移数据库（添加user_id字段）
+    try:
+        from sqlalchemy import inspect, text
+        import uuid
+        
+        inspector = inspect(engine)
+        if 'conversations' in inspector.get_table_names():
+            columns = [col['name'] for col in inspector.get_columns('conversations')]
+            
+            if 'user_id' not in columns:
+                logger.info("database_migration_starting", migration="add_user_id")
+                
+                # 执行迁移（SQLite需要autocommit模式执行DDL）
+                with engine.begin() as conn:
+                    # 获取现有会话数量
+                    result = conn.execute(text("SELECT COUNT(*) FROM conversations"))
+                    count = result.scalar()
+                    logger.info("migration_existing_conversations", count=count)
+                    
+                    if count > 0:
+                        # 为所有旧会话分配默认用户ID
+                        default_user_id = str(uuid.uuid4())
+                        logger.info("migration_default_user_id", user_id=default_user_id)
+                        
+                        # 创建新表
+                        conn.execute(text("""
+                            CREATE TABLE conversations_new (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                user_id VARCHAR(36) NOT NULL,
+                                title VARCHAR(255) NOT NULL DEFAULT '新对话',
+                                created_at DATETIME NOT NULL,
+                                updated_at DATETIME NOT NULL
+                            )
+                        """))
+                        
+                        # 迁移数据
+                        conn.execute(text(f"""
+                            INSERT INTO conversations_new (id, user_id, title, created_at, updated_at)
+                            SELECT id, '{default_user_id}', title, created_at, updated_at
+                            FROM conversations
+                        """))
+                        
+                        # 删除旧表，重命名新表
+                        conn.execute(text("DROP TABLE conversations"))
+                        conn.execute(text("ALTER TABLE conversations_new RENAME TO conversations"))
+                        
+                        # 创建索引
+                        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_conversations_user_id ON conversations(user_id)"))
+                        
+                        logger.info("database_migration_completed", migrated_conversations=count)
+                    else:
+                        # 没有数据，直接添加字段
+                        conn.execute(text("ALTER TABLE conversations ADD COLUMN user_id VARCHAR(36)"))
+                        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_conversations_user_id ON conversations(user_id)"))
+                        logger.info("database_migration_completed", migrated_conversations=0)
+            else:
+                logger.debug("database_migration_not_needed", reason="user_id_column_exists")
+    except Exception as e:
+        logger.error("database_migration_failed", error=str(e), error_type=type(e).__name__)
+        # 不阻止应用启动，但记录错误
     
     yield
     

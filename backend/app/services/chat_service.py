@@ -28,7 +28,8 @@ class ChatService:
         self,
         conversation_id: int,
         user_message: str,
-        thinking_enabled: bool = False
+        thinking_enabled: bool = False,
+        user_id: str = None
     ) -> AsyncGenerator[Dict[str, str], None]:
         """
         流式聊天
@@ -37,14 +38,15 @@ class ChatService:
             conversation_id: 会话 ID
             user_message: 用户消息
             thinking_enabled: 是否启用思考模式
+            user_id: 用户ID（用于验证会话所有权）
             
         Yields:
             流式响应数据
         """
-        # 验证会话是否存在
-        conversation = self.conversation_repo.get_by_id(conversation_id)
+        # 验证会话是否存在且属于当前用户
+        conversation = self.conversation_repo.get_by_id(conversation_id, user_id=user_id)
         if not conversation:
-            yield {"type": "error", "content": "会话不存在"}
+            yield {"type": "error", "content": "会话不存在或无权访问"}
             return
         
         # 保存用户消息
@@ -129,13 +131,14 @@ class ChatService:
             )
             yield {"type": "error", "content": f"处理失败: {str(e)}"}
     
-    async def generate_title(self, conversation_id: int, first_message: str) -> str:
+    async def generate_title(self, conversation_id: int, first_message: str, user_id: str = None) -> str:
         """
         生成会话标题
         
         Args:
             conversation_id: 会话 ID
             first_message: 第一条用户消息
+            user_id: 用户ID（用于验证会话所有权）
             
         Returns:
             生成的标题
@@ -144,7 +147,7 @@ class ChatService:
             title = await self.llm_client.generate_title(first_message)
             
             # 更新会话标题
-            self.conversation_repo.update_title(conversation_id, title)
+            self.conversation_repo.update_title(conversation_id, title, user_id=user_id)
             
             logger.info(
                 "title_generated",
@@ -162,5 +165,5 @@ class ChatService:
             )
             # 失败时使用消息前缀
             fallback_title = first_message[:15]
-            self.conversation_repo.update_title(conversation_id, fallback_title)
+            self.conversation_repo.update_title(conversation_id, fallback_title, user_id=user_id)
             return fallback_title

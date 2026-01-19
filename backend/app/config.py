@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     LLM_REQUEST_TIMEOUT: int = 30  # 秒
     LLM_MAX_RETRIES: int = 3
     LLM_TEMPERATURE: float = 1.0
-    LLM_MAX_TOKENS: int = 2000
+    LLM_MAX_TOKENS: int = 30000
     
     # ==================== 数据库配置 ====================
     DATABASE_URL: str = "sqlite:///./chat_history.db"

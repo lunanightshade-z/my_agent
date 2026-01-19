@@ -16,6 +16,7 @@ class Conversation(Base):
     __tablename__ = "conversations"
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(36), nullable=False, index=True)  # 游客唯一ID（UUID格式）
     title = Column(String(255), nullable=False, default="新对话")
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -24,7 +25,7 @@ class Conversation(Base):
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
     
     def __repr__(self):
-        return f"<Conversation(id={self.id}, title='{self.title}')>"
+        return f"<Conversation(id={self.id}, user_id='{self.user_id}', title='{self.title}')>"
 
 
 class Message(Base):

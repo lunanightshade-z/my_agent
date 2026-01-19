@@ -2,13 +2,14 @@
 FastAPI 主应用
 提供聊天系统的所有 API 端点
 """
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 import json
+import uuid
 
 from database import engine, get_db, Base
 from models import Conversation, Message
@@ -17,6 +18,10 @@ from schemas import (
     MessageResponse, MessageList, ChatRequest
 )
 from zhipu_service import get_zhipu_stream_response, generate_conversation_title_sync
+
+# Cookie名称常量
+USER_ID_COOKIE_NAME = "visitor_id"
+USER_ID_COOKIE_MAX_AGE = 365 * 24 * 60 * 60  # 1年
 
 # 创建数据库表
 Base.metadata.create_all(bind=engine)
@@ -39,17 +44,54 @@ app.add_middleware(
 )
 
 
+# ==================== 用户ID管理 ====================
+
+def get_or_create_user_id(request: Request, response: Response) -> str:
+    """
+    获取或创建游客唯一ID
+    从cookie中读取，如果没有则生成新的UUID并设置到cookie中
+    
+    Args:
+        request: FastAPI请求对象
+        response: FastAPI响应对象（用于设置cookie）
+        
+    Returns:
+        用户唯一ID（UUID字符串）
+    """
+    # 尝试从cookie中获取用户ID
+    user_id = request.cookies.get(USER_ID_COOKIE_NAME)
+    
+    # 如果cookie中不存在，生成新的UUID
+    if not user_id:
+        user_id = str(uuid.uuid4())
+        # 设置cookie，有效期1年
+        response.set_cookie(
+            key=USER_ID_COOKIE_NAME,
+            value=user_id,
+            max_age=USER_ID_COOKIE_MAX_AGE,
+            httponly=False,  # 允许前端JavaScript访问（如果需要）
+            samesite="lax",  # 防止CSRF攻击
+            secure=False  # 开发环境使用False，生产环境应设为True（需要HTTPS）
+        )
+    
+    return user_id
+
+
 # ==================== 会话管理端点 ====================
 
 @app.post("/api/conversations", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
 def create_conversation(
     conversation: ConversationCreate,
+    request: Request,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
     创建新的对话会话
+    每个游客都有独立的会话空间
     """
-    db_conversation = Conversation(title=conversation.title)
+    user_id = get_or_create_user_id(request, response)
+    db_conversation = Conversation(title=conversation.title, user_id=user_id)
     db.add(db_conversation)
     db.commit()
     db.refresh(db_conversation)
@@ -58,14 +100,19 @@ def create_conversation(
 
 @app.get("/api/conversations", response_model=ConversationList)
 def get_conversations(
+    request: Request,
+    response: Response,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db)
 ):
     """
-    获取所有对话会话列表（按更新时间倒序）
+    获取当前游客的所有对话会话列表（按更新时间倒序）
+    每个游客只能看到自己的会话
     """
+    user_id = get_or_create_user_id(request, response)
     conversations = db.query(Conversation)\
+        .filter(Conversation.user_id == user_id)\
         .order_by(Conversation.updated_at.desc())\
         .offset(skip)\
         .limit(limit)\
@@ -76,14 +123,21 @@ def get_conversations(
 @app.delete("/api/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_conversation(
     conversation_id: int,
+    request: Request,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
     删除指定的对话会话及其所有消息
+    只能删除属于当前游客的会话
     """
-    conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    user_id = get_or_create_user_id(request, response)
+    conversation = db.query(Conversation)\
+        .filter(Conversation.id == conversation_id)\
+        .filter(Conversation.user_id == user_id)\
+        .first()
     if not conversation:
-        raise HTTPException(status_code=404, detail="会话不存在")
+        raise HTTPException(status_code=404, detail="会话不存在或无权访问")
     
     db.delete(conversation)
     db.commit()
@@ -94,14 +148,21 @@ def delete_conversation(
 def update_conversation_title(
     conversation_id: int,
     title: str,
+    request: Request,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
     更新会话标题
+    只能更新属于当前游客的会话
     """
-    conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    user_id = get_or_create_user_id(request, response)
+    conversation = db.query(Conversation)\
+        .filter(Conversation.id == conversation_id)\
+        .filter(Conversation.user_id == user_id)\
+        .first()
     if not conversation:
-        raise HTTPException(status_code=404, detail="会话不存在")
+        raise HTTPException(status_code=404, detail="会话不存在或无权访问")
     
     conversation.title = title
     conversation.updated_at = datetime.utcnow()
@@ -115,14 +176,21 @@ def update_conversation_title(
 def generate_title(
     conversation_id: int,
     first_message: str,
+    request: Request,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
     基于第一条消息自动生成会话标题
+    只能为属于当前游客的会话生成标题
     """
-    conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    user_id = get_or_create_user_id(request, response)
+    conversation = db.query(Conversation)\
+        .filter(Conversation.id == conversation_id)\
+        .filter(Conversation.user_id == user_id)\
+        .first()
     if not conversation:
-        raise HTTPException(status_code=404, detail="会话不存在")
+        raise HTTPException(status_code=404, detail="会话不存在或无权访问")
     
     # 调用智谱AI生成标题
     try:
@@ -147,15 +215,22 @@ def generate_title(
 @app.get("/api/conversations/{conversation_id}/messages", response_model=MessageList)
 def get_conversation_messages(
     conversation_id: int,
+    request: Request,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
     获取指定对话的所有消息历史
+    只能获取属于当前游客的会话消息
     """
-    # 检查会话是否存在
-    conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    user_id = get_or_create_user_id(request, response)
+    # 检查会话是否存在且属于当前游客
+    conversation = db.query(Conversation)\
+        .filter(Conversation.id == conversation_id)\
+        .filter(Conversation.user_id == user_id)\
+        .first()
     if not conversation:
-        raise HTTPException(status_code=404, detail="会话不存在")
+        raise HTTPException(status_code=404, detail="会话不存在或无权访问")
     
     # 获取消息列表（按时间顺序）
     messages = db.query(Message)\
@@ -171,16 +246,23 @@ def get_conversation_messages(
 @app.post("/api/chat/stream")
 async def chat_stream(
     chat_request: ChatRequest,
+    request: Request,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
     流式聊天端点（SSE）
     接收用户消息，调用智谱AI，返回流式响应
+    只能向属于当前游客的会话发送消息
     """
-    # 验证会话是否存在
-    conversation = db.query(Conversation).filter(Conversation.id == chat_request.conversation_id).first()
+    user_id = get_or_create_user_id(request, response)
+    # 验证会话是否存在且属于当前游客
+    conversation = db.query(Conversation)\
+        .filter(Conversation.id == chat_request.conversation_id)\
+        .filter(Conversation.user_id == user_id)\
+        .first()
     if not conversation:
-        raise HTTPException(status_code=404, detail="会话不存在")
+        raise HTTPException(status_code=404, detail="会话不存在或无权访问")
     
     # 保存用户消息到数据库
     user_message = Message(

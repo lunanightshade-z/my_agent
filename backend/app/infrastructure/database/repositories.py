@@ -17,73 +17,90 @@ class ConversationRepository:
     def __init__(self, db: Session):
         self.db = db
     
-    def create(self, title: str = "新对话") -> Conversation:
+    def create(self, title: str = "新对话", user_id: str = None) -> Conversation:
         """
         创建新会话
         
         Args:
             title: 会话标题
+            user_id: 用户ID（必需）
             
         Returns:
             创建的会话对象
         """
-        conversation = Conversation(title=title)
+        if not user_id:
+            raise ValueError("user_id is required")
+        
+        conversation = Conversation(title=title, user_id=user_id)
         self.db.add(conversation)
         self.db.commit()
         self.db.refresh(conversation)
         
-        logger.info("conversation_created", conversation_id=conversation.id, title=title)
+        logger.info("conversation_created", conversation_id=conversation.id, user_id=user_id, title=title)
         return conversation
     
-    def get_by_id(self, conversation_id: int) -> Optional[Conversation]:
+    def get_by_id(self, conversation_id: int, user_id: str = None) -> Optional[Conversation]:
         """
         根据 ID 获取会话
         
         Args:
             conversation_id: 会话 ID
+            user_id: 用户ID（可选，如果提供则验证所有权）
             
         Returns:
-            会话对象，如果不存在返回 None
+            会话对象，如果不存在或不属于该用户返回 None
         """
-        conversation = self.db.query(Conversation).filter(Conversation.id == conversation_id).first()
+        query = self.db.query(Conversation).filter(Conversation.id == conversation_id)
+        
+        # 如果提供了user_id，添加过滤条件
+        if user_id:
+            query = query.filter(Conversation.user_id == user_id)
+        
+        conversation = query.first()
         if conversation:
-            logger.debug("conversation_retrieved", conversation_id=conversation_id)
+            logger.debug("conversation_retrieved", conversation_id=conversation_id, user_id=user_id)
         else:
-            logger.warning("conversation_not_found", conversation_id=conversation_id)
+            logger.warning("conversation_not_found", conversation_id=conversation_id, user_id=user_id)
         return conversation
     
-    def get_all(self, skip: int = 0, limit: int = 100) -> List[Conversation]:
+    def get_all(self, skip: int = 0, limit: int = 100, user_id: str = None) -> List[Conversation]:
         """
-        获取所有会话（按更新时间倒序）
+        获取会话列表（按更新时间倒序）
         
         Args:
             skip: 跳过的记录数
             limit: 返回的最大记录数
+            user_id: 用户ID（必需，只返回该用户的会话）
             
         Returns:
             会话列表
         """
+        if not user_id:
+            raise ValueError("user_id is required")
+        
         conversations = self.db.query(Conversation)\
+            .filter(Conversation.user_id == user_id)\
             .order_by(Conversation.updated_at.desc())\
             .offset(skip)\
             .limit(limit)\
             .all()
         
-        logger.debug("conversations_listed", count=len(conversations))
+        logger.debug("conversations_listed", count=len(conversations), user_id=user_id)
         return conversations
     
-    def update_title(self, conversation_id: int, title: str) -> Optional[Conversation]:
+    def update_title(self, conversation_id: int, title: str, user_id: str = None) -> Optional[Conversation]:
         """
         更新会话标题
         
         Args:
             conversation_id: 会话 ID
             title: 新标题
+            user_id: 用户ID（可选，如果提供则验证所有权）
             
         Returns:
-            更新后的会话对象，如果不存在返回 None
+            更新后的会话对象，如果不存在或不属于该用户返回 None
         """
-        conversation = self.get_by_id(conversation_id)
+        conversation = self.get_by_id(conversation_id, user_id=user_id)
         if not conversation:
             return None
         
@@ -92,27 +109,28 @@ class ConversationRepository:
         self.db.commit()
         self.db.refresh(conversation)
         
-        logger.info("conversation_title_updated", conversation_id=conversation_id, title=title)
+        logger.info("conversation_title_updated", conversation_id=conversation_id, user_id=user_id, title=title)
         return conversation
     
-    def delete(self, conversation_id: int) -> bool:
+    def delete(self, conversation_id: int, user_id: str = None) -> bool:
         """
         删除会话及其所有消息
         
         Args:
             conversation_id: 会话 ID
+            user_id: 用户ID（可选，如果提供则验证所有权）
             
         Returns:
             是否删除成功
         """
-        conversation = self.get_by_id(conversation_id)
+        conversation = self.get_by_id(conversation_id, user_id=user_id)
         if not conversation:
             return False
         
         self.db.delete(conversation)
         self.db.commit()
         
-        logger.info("conversation_deleted", conversation_id=conversation_id)
+        logger.info("conversation_deleted", conversation_id=conversation_id, user_id=user_id)
         return True
     
     def update_timestamp(self, conversation_id: int) -> None:

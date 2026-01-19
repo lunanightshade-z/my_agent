@@ -17,6 +17,7 @@ class ConversationCreate(BaseModel):
 class ConversationResponse(BaseModel):
     """会话响应模型"""
     id: int
+    user_id: str
     title: str
     created_at: datetime
     updated_at: datetime
