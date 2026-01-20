@@ -2,7 +2,7 @@
  * 左侧聊天历史面板组件
  * 显示所有会话列表，支持切换和删除
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Plus, MessageSquare, Trash2, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,7 +36,7 @@ const ChatHistory = () => {
   };
 
   // 切换会话
-  const handleSelectConversation = async (convId) => {
+  const handleSelectConversation = useCallback(async (convId) => {
     if (convId === currentConversationId) return;
     
     try {
@@ -53,7 +53,7 @@ const ChatHistory = () => {
     } finally {
       dispatch(setLoading(false));
     }
-  };
+  }, [currentConversationId, dispatch]);
 
   // 加载会话列表
   useEffect(() => {
@@ -65,8 +65,7 @@ const ChatHistory = () => {
     if (conversations.length > 0 && !currentConversationId) {
       handleSelectConversation(conversations[0].id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversations.length, currentConversationId]);
+  }, [conversations.length, currentConversationId, handleSelectConversation]);
 
   // 创建新对话
   const handleNewChat = async () => {
