@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -383,3 +385,163 @@ input:focus, textarea:focus {
   animation: gold-pulse 2s ease-in-out infinite;
 }
 
+/* ======================== 魔法主题样式 ======================== */
+
+/* 魔法字体类 */
+.font-magic-title { 
+  font-family: 'Cinzel', serif; 
+}
+
+.font-magic-body { 
+  font-family: 'Cormorant Garamond', serif; 
+}
+
+/* 魔法主题配色变量 */
+:root {
+  --gold-primary: #FFD700;
+  --gold-dim: #C5A059;
+  --deep-blue: #0a0e17;
+  --magic-purple: #2a1b3d;
+  --parchment: #f0e6d2;
+}
+
+/* 金色滚动条 - 魔法主题 */
+.magic-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.magic-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.magic-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 10px;
+}
+
+.magic-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.6);
+}
+
+/* 背景噪点纹理 */
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* 魔法发光动画 */
+@keyframes glow-pulse {
+  0% { 
+    text-shadow: 0 0 5px var(--gold-dim), 0 0 10px var(--gold-dim); 
+  }
+  50% { 
+    text-shadow: 0 0 20px var(--gold-primary), 0 0 30px var(--gold-primary); 
+  }
+  100% { 
+    text-shadow: 0 0 5px var(--gold-dim), 0 0 10px var(--gold-dim); 
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* 悬浮粒子动画 */
+@keyframes float-particle {
+  0% { 
+    transform: translateY(0px) translateX(0px); 
+    opacity: 0; 
+  }
+  50% { 
+    opacity: 0.8; 
+  }
+  100% { 
+    transform: translateY(-100px) translateX(20px); 
+    opacity: 0; 
+  }
+}
+
+.animate-float-particle {
+  animation: float-particle 10s linear infinite;
+}
+
+/* 液态流光背景 */
+@keyframes gradientBG {
+  0% { 
+    background-position: 0% 50%; 
+  }
+  50% { 
+    background-position: 100% 50%; 
+  }
+  100% { 
+    background-position: 0% 50%; 
+  }
+}
+
+.liquid-bg {
+  background: linear-gradient(45deg, #1a103c, #0d0620, #251845);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+}
+
+/* 玻璃拟态卡片 - 魔法主题 */
+.glass-card-magic {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  transform-style: preserve-3d;
+}
+
+.glass-card-magic:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+  transform: rotateY(5deg) rotateX(5deg) translateZ(20px);
+}
+
+/* 羊皮纸纹理混合模式 */
+.parchment-texture {
+  background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+  mix-blend-mode: overlay;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* 隐形墨水显现效果 */
+.ink-reveal {
+  filter: blur(8px);
+  opacity: 0;
+  transition: all 1.5s ease-out;
+  transform: scale(0.95);
+}
+
+.ink-reveal.visible {
+  filter: blur(0px);
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 魔法卡片容器 */
+.card-container {
+  perspective: 1000px;
+}
+
+/* 流光效果 */
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 200%;
+  }
+}
+
+.animate-shine {
+  animation: shine 2s ease-in-out;
+}
+
+/* 魔法3D透视 */
+.perspective-1000 {
+  perspective: 1000px;
+}

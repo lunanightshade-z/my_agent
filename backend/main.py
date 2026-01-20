@@ -28,8 +28,8 @@ Base.metadata.create_all(bind=engine)
 
 # 初始化 FastAPI 应用
 app = FastAPI(
-    title="智谱AI聊天系统",
-    description="基于智谱AI的聊天应用后端API",
+    title="AI Agent Platform - Enterprise Architecture Version",
+    description="Enterprise-level chat application backend API based on ZhipuAI",
     version="1.0.0"
 )
 
@@ -48,7 +48,7 @@ app.add_middleware(
 
 def get_or_create_user_id(request: Request, response: Response) -> str:
     """
-    获取或创建游客唯一ID
+    Get or create visitor unique ID
     从cookie中读取，如果没有则生成新的UUID并设置到cookie中
     
     Args:

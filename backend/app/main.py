@@ -105,7 +105,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="基于智谱AI的企业级聊天应用后端API",
+    description="Enterprise-level chat application backend API based on ZhipuAI",
     version=settings.APP_VERSION,
     debug=settings.DEBUG,
     lifespan=lifespan
@@ -203,7 +203,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
-            "detail": "服务器内部错误",
+            "detail": "Server internal error",
             "request_id": request_id
         }
     )
@@ -221,7 +221,7 @@ app.include_router(chat.router, prefix=settings.API_V1_PREFIX)
 
 @app.get("/")
 def root():
-    """根路径，返回 API 信息"""
+    """Root path, return API information"""
     return {
         "message": f"{settings.APP_NAME} API",
         "version": settings.APP_VERSION,
@@ -232,7 +232,7 @@ def root():
 
 @app.get("/health")
 def health_check():
-    """健康检查端点"""
+    """Health check endpoint"""
     return {
         "status": "healthy",
         "service": settings.APP_NAME,

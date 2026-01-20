@@ -26,6 +26,20 @@ export default {
           surface: '#1a1a1a',
           card: '#262626',
         },
+        // 魔法主题配色
+        magic: {
+          'deep-blue': '#0a0e17',
+          'magic-purple': '#2a1b3d',
+          parchment: '#f0e6d2',
+          'gold-primary': '#FFD700',
+          'gold-dim': '#C5A059',
+        },
+        // 文本色
+        text: {
+          primary: '#f0ede5',
+          secondary: '#b8b8b8',
+          tertiary: '#808080',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

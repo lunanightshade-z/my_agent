@@ -1,19 +1,20 @@
 /**
- * 主应用布局组件 - 赛博朋克设计
- * 三列布局: 历史记录 | 聊天区 | Artifact面板
- * 集成粒子背景和深度思考模式
+ * 主应用布局组件
+ * Chat 页面保留原本的 SYNTH AI 样式
+ * 非 Chat 页面渲染 children，并显示魔法导航栏
  */
 import React, { useRef, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Layers, Sparkles, MoreHorizontal, Box, Maximize2, Code, FileText } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Box, Sparkles, Maximize2, Code, FileText, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../../styles/utils.js';
-import { colors } from '../../styles/tokens.js';
 import ParticleBackground from '../ui/ParticleBackground.jsx';
 import ChatArea from '../composite/ChatArea.jsx';
 import InputContainer from '../composite/InputContainer.jsx';
 import Button from '../ui/Button.jsx';
 import ChatHistory from '../ChatHistory.jsx';
+import MagicNavbar from '../MagicNavbar.jsx';
 import {
   addUserMessage,
   startStreaming,
@@ -33,10 +34,32 @@ import {
 
 const AppLayout = ({ children }) => {
   const dispatch = useDispatch();
-  const { thinkingEnabled, currentConversationId, messages, isStreaming } = useSelector((state) => state.chat);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isChatPage = location.pathname === '/chat';
+  const showMagicNavbar = !isChatPage;
+
+  // 所有hooks必须在条件返回之前调用
+  const { thinkingEnabled, currentConversationId, messages, isStreaming } = useSelector(
+    (state) => state.chat
+  );
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [activeArtifact, setActiveArtifact] = useState(null);
+  const [activeArtifact] = useState(null);
   const containerRef = useRef(null);
+
+  // 非 Chat 页面直接渲染 children（Home / Agent）
+  if (!isChatPage) {
+    return (
+      <div className="relative w-full min-h-screen overflow-hidden">
+        {showMagicNavbar && <MagicNavbar />}
+        <div className={showMagicNavbar ? 'pt-24' : ''}>
+          {children}
+        </div>
+      </div>
+    );
+  }
+
+  // Chat 页面：使用原本的 SYNTH AI 布局样式
 
   // 视差鼠标跟踪（带防抖和优化）
   useEffect(() => {
@@ -46,13 +69,10 @@ const AppLayout = ({ children }) => {
 
     const handleMouseMove = (e) => {
       if (!containerRef.current) return;
-
-      // 防抖：每16ms最多更新一次（60fps）
       if (throttleTimer) return;
 
       throttleTimer = setTimeout(() => {
         const { innerWidth, innerHeight } = window;
-        // 只在移动距离超过5px时才更新
         const x = (e.clientX - innerWidth / 2) / innerWidth;
         const y = (e.clientY - innerHeight / 2) / innerHeight;
 
@@ -86,13 +106,11 @@ const AppLayout = ({ children }) => {
   const handleSendMessage = async (message) => {
     let conversationId = currentConversationId;
 
-    // 没有选中会话时：自动创建一个会话，避免“发送无效果”
     if (!conversationId) {
       try {
         const newConv = await createConversation();
         conversationId = newConv.id;
         dispatch(setCurrentConversation(conversationId));
-        // 刷新会话列表，左侧能立刻看到
         const updatedConvs = await getConversations();
         dispatch(setConversations(updatedConvs));
       } catch (error) {
@@ -125,7 +143,6 @@ const AppLayout = ({ children }) => {
             const updatedConvs = await getConversations();
             dispatch(setConversations(updatedConvs));
           } catch (e) {
-            // 标题生成失败不影响聊天
             // eslint-disable-next-line no-console
             console.error('生成标题失败:', e);
           }
@@ -197,7 +214,6 @@ const AppLayout = ({ children }) => {
           transition={{ delay: 0.1 }}
           className="hidden lg:flex flex-col w-72"
         >
-          {/* 使用真实会话列表（会请求 /api/conversations） */}
           <ChatHistory />
         </motion.div>
 
@@ -236,6 +252,17 @@ const AppLayout = ({ children }) => {
                 </div>
               </div>
             </div>
+            
+            {/* 返回首页按钮 */}
+            <motion.button
+              className="p-2 rounded-lg text-gray-400 hover:text-elite-gold hover:bg-elite-gold/10 transition-all"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate('/')}
+              title="返回首页"
+            >
+              <Home className="w-5 h-5" />
+            </motion.button>
           </header>
 
           {/* 聊天区域 */}
@@ -264,10 +291,7 @@ const AppLayout = ({ children }) => {
           {/* 头部 */}
           <div className="p-5 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-white/5 to-transparent">
             <div className="flex items-center gap-2">
-              <Sparkles
-                size={16}
-                className={thinkingEnabled ? 'text-elite-gold' : 'text-elite-gold'}
-              />
+              <Sparkles size={16} className="text-elite-gold" />
               <span className="text-sm font-bold tracking-widest uppercase">Artifact</span>
             </div>
             <Maximize2 size={14} className="opacity-50 hover:opacity-100 cursor-pointer" />
@@ -302,10 +326,7 @@ const AppLayout = ({ children }) => {
                     <motion.div
                       animate={{ width: ['0%', '100%', '0%'] }}
                       transition={{ duration: 2, repeat: Infinity }}
-                      className={cn(
-                        'h-full rounded-full',
-                        thinkingEnabled ? 'bg-elite-gold' : 'bg-elite-gold'
-                      )}
+                      className="h-full rounded-full bg-elite-gold"
                     />
                   </div>
                   <div className="flex justify-between text-[10px] uppercase tracking-widest opacity-50">

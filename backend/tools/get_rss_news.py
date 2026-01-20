@@ -3,6 +3,8 @@
 RSS新闻获取工具 - 使用示例
 
 这个模块展示如何使用rss_fetcher包来获取和处理RSS新闻。
+
+cd backend && source venv/bin/activate && cd tools && python get_rss_news.py
 """
 import json
 import logging

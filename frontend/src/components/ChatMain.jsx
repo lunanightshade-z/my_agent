@@ -189,7 +189,7 @@ const ChatMain = () => {
                 <MessageCircle size={48} className="text-mint-400" />
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                欢迎使用智谱AI聊天助手
+                Welcome to Era of AI Agent
               </h2>
               <p className="text-gray-500 max-w-md">
                 选择左侧的对话，或创建一个新对话开始聊天
