@@ -47,22 +47,10 @@ const AppLayout = ({ children }) => {
   const [activeArtifact] = useState(null);
   const containerRef = useRef(null);
 
-  // 非 Chat 页面直接渲染 children（Home / Agent）
-  if (!isChatPage) {
-    return (
-      <div className="relative w-full min-h-screen overflow-hidden">
-        {showMagicNavbar && <MagicNavbar />}
-        <div className={showMagicNavbar ? 'pt-24' : ''}>
-          {children}
-        </div>
-      </div>
-    );
-  }
-
-  // Chat 页面：使用原本的 SYNTH AI 布局样式
-
-  // 视差鼠标跟踪（带防抖和优化）
+  // 视差鼠标跟踪（带防抖和优化）- 必须在条件返回之前定义
   useEffect(() => {
+    if (!isChatPage) return; // 非Chat页面不需要此效果
+    
     let throttleTimer;
     let lastX = 0;
     let lastY = 0;
@@ -94,7 +82,19 @@ const AppLayout = ({ children }) => {
       window.removeEventListener('mousemove', handleMouseMove);
       if (throttleTimer) clearTimeout(throttleTimer);
     };
-  }, []);
+  }, [isChatPage]);
+
+  // 非 Chat 页面直接渲染 children（Home / Agent）
+  if (!isChatPage) {
+    return (
+      <div className="relative w-full min-h-screen overflow-hidden">
+        {showMagicNavbar && <MagicNavbar />}
+        <div className={showMagicNavbar ? 'pt-24' : ''}>
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   const tiltStyle = {
     transform: `perspective(1000px) rotateY(${mousePos.x * 0.5}deg) rotateX(${mousePos.y * -0.5}deg)`,
