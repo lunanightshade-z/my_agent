@@ -214,8 +214,8 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                         </code>
                       );
                     },
-                    // 段落
-                    p: ({ children }) => <p className="mb-3 last:mb-0 text-gray-200 leading-relaxed">{children}</p>,
+                    // 段落 - 不设置文本颜色，让子元素的样式生效
+                    p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed" style={{ color: 'inherit' }}>{children}</p>,
                     // 标题
                     h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
                     h2: ({ children }) => <h2 className="text-lg font-bold mb-3 text-white">{children}</h2>,
@@ -223,10 +223,10 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                     h4: ({ children }) => <h4 className="text-sm font-bold mb-2 text-white">{children}</h4>,
                     h5: ({ children }) => <h5 className="text-sm font-bold mb-2 text-white">{children}</h5>,
                     h6: ({ children }) => <h6 className="text-sm font-bold mb-2 text-white">{children}</h6>,
-                    // 列表
-                    ul: ({ children }) => <ul className="list-disc pl-5 mb-3 text-gray-200 space-y-1">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 text-gray-200 space-y-1">{children}</ol>,
-                    li: ({ children }) => <li className="mb-1">{children}</li>,
+                    // 列表 - 不设置文本颜色
+                    ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>,
+                    li: ({ children }) => <li className="mb-1" style={{ color: '#e5e5e5' }}>{children}</li>,
                     // 链接
                     a: ({ children, href }) => (
                       <a href={href} className="text-cyan-400 hover:text-cyan-300 underline transition-colors" target="_blank" rel="noopener noreferrer">
