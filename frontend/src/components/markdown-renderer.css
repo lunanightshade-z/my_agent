@@ -53,22 +53,22 @@
 
 .heading-h3 {
   font-size: 1.3rem;
-  color: rgba(0, 255, 255, 0.95);
+  color: #000000;
 }
 
 .heading-h4 {
   font-size: 1.1rem;
-  color: rgba(0, 255, 255, 0.9);
+  color: #000000;
 }
 
 .heading-h5 {
   font-size: 1rem;
-  color: rgba(0, 255, 255, 0.85);
+  color: #000000;
 }
 
 .heading-h6 {
   font-size: 0.95rem;
-  color: rgba(0, 255, 255, 0.8);
+  color: #000000;
   font-weight: 600;
 }
 
@@ -308,7 +308,7 @@
 strong,
 b {
   font-weight: 700;
-  color: rgba(0, 255, 255, 0.95);
+  color: #000000;
 }
 
 em,
