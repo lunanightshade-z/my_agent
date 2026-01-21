@@ -12,6 +12,7 @@ from datetime import datetime
 class ConversationCreate(BaseModel):
     """创建会话的请求模型"""
     title: Optional[str] = Field(default="新对话", description="会话标题")
+    conversation_type: Optional[str] = Field(default="chat", description="会话类型：chat 或 agent")
 
 
 class ConversationResponse(BaseModel):
@@ -19,6 +20,7 @@ class ConversationResponse(BaseModel):
     id: int
     user_id: str
     title: str
+    conversation_type: str
     created_at: datetime
     updated_at: datetime
     

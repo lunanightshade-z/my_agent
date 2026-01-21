@@ -95,6 +95,64 @@ async def lifespan(app: FastAPI):
         logger.error("database_migration_failed", error=str(e), error_type=type(e).__name__)
         # 不阻止应用启动，但记录错误
     
+    # 检查并迁移数据库（添加conversation_type字段）
+    try:
+        from sqlalchemy import inspect, text
+        
+        inspector = inspect(engine)
+        if 'conversations' in inspector.get_table_names():
+            columns = [col['name'] for col in inspector.get_columns('conversations')]
+            
+            if 'conversation_type' not in columns:
+                logger.info("database_migration_starting", migration="add_conversation_type")
+                
+                # 执行迁移（SQLite需要autocommit模式执行DDL）
+                with engine.begin() as conn:
+                    # 获取现有会话数量
+                    result = conn.execute(text("SELECT COUNT(*) FROM conversations"))
+                    count = result.scalar()
+                    logger.info("migration_existing_conversations", count=count)
+                    
+                    if count > 0:
+                        # 创建新表结构（包含conversation_type字段）
+                        conn.execute(text("""
+                            CREATE TABLE conversations_new (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                user_id VARCHAR(36) NOT NULL,
+                                title VARCHAR(255) NOT NULL DEFAULT '新对话',
+                                conversation_type VARCHAR(20) NOT NULL DEFAULT 'chat',
+                                created_at DATETIME NOT NULL,
+                                updated_at DATETIME NOT NULL
+                            )
+                        """))
+                        
+                        # 迁移数据：为所有现有会话设置默认类型为 'chat'
+                        conn.execute(text("""
+                            INSERT INTO conversations_new (id, user_id, title, conversation_type, created_at, updated_at)
+                            SELECT id, user_id, title, 'chat', created_at, updated_at
+                            FROM conversations
+                        """))
+                        
+                        # 删除旧表，重命名新表
+                        conn.execute(text("DROP TABLE conversations"))
+                        conn.execute(text("ALTER TABLE conversations_new RENAME TO conversations"))
+                        
+                        # 创建索引
+                        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_conversations_user_id ON conversations(user_id)"))
+                        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_conversations_conversation_type ON conversations(conversation_type)"))
+                        
+                        logger.info("database_migration_completed", migrated_conversations=count, migration="add_conversation_type")
+                    else:
+                        # 没有数据，直接添加字段
+                        conn.execute(text("ALTER TABLE conversations ADD COLUMN conversation_type VARCHAR(20) NOT NULL DEFAULT 'chat'"))
+                        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_conversations_conversation_type ON conversations(conversation_type)"))
+                        logger.info("database_migration_completed", migrated_conversations=0, migration="add_conversation_type")
+            else:
+                logger.debug("database_migration_not_needed", reason="conversation_type_column_exists")
+    except Exception as e:
+        logger.error("database_migration_failed", error=str(e), error_type=type(e).__name__, migration="add_conversation_type")
+        # 不阻止应用启动，但记录错误
+    
     yield
     
     # 关闭时执行

@@ -17,13 +17,14 @@ class ConversationRepository:
     def __init__(self, db: Session):
         self.db = db
     
-    def create(self, title: str = "新对话", user_id: str = None) -> Conversation:
+    def create(self, title: str = "新对话", user_id: str = None, conversation_type: str = "chat") -> Conversation:
         """
         创建新会话
         
         Args:
             title: 会话标题
             user_id: 用户ID（必需）
+            conversation_type: 会话类型（"chat" 或 "agent"），默认为 "chat"
             
         Returns:
             创建的会话对象
@@ -31,12 +32,15 @@ class ConversationRepository:
         if not user_id:
             raise ValueError("user_id is required")
         
-        conversation = Conversation(title=title, user_id=user_id)
+        if conversation_type not in ["chat", "agent"]:
+            raise ValueError("conversation_type must be 'chat' or 'agent'")
+        
+        conversation = Conversation(title=title, user_id=user_id, conversation_type=conversation_type)
         self.db.add(conversation)
         self.db.commit()
         self.db.refresh(conversation)
         
-        logger.info("conversation_created", conversation_id=conversation.id, user_id=user_id, title=title)
+        logger.info("conversation_created", conversation_id=conversation.id, user_id=user_id, title=title, conversation_type=conversation_type)
         return conversation
     
     def get_by_id(self, conversation_id: int, user_id: str = None) -> Optional[Conversation]:
@@ -63,7 +67,7 @@ class ConversationRepository:
             logger.warning("conversation_not_found", conversation_id=conversation_id, user_id=user_id)
         return conversation
     
-    def get_all(self, skip: int = 0, limit: int = 100, user_id: str = None) -> List[Conversation]:
+    def get_all(self, skip: int = 0, limit: int = 100, user_id: str = None, conversation_type: str = None) -> List[Conversation]:
         """
         获取会话列表（按更新时间倒序）
         
@@ -71,6 +75,7 @@ class ConversationRepository:
             skip: 跳过的记录数
             limit: 返回的最大记录数
             user_id: 用户ID（必需，只返回该用户的会话）
+            conversation_type: 会话类型过滤（可选，"chat" 或 "agent"）
             
         Returns:
             会话列表
@@ -78,14 +83,21 @@ class ConversationRepository:
         if not user_id:
             raise ValueError("user_id is required")
         
-        conversations = self.db.query(Conversation)\
-            .filter(Conversation.user_id == user_id)\
+        query = self.db.query(Conversation).filter(Conversation.user_id == user_id)
+        
+        # 如果指定了类型，添加类型过滤
+        if conversation_type:
+            if conversation_type not in ["chat", "agent"]:
+                raise ValueError("conversation_type must be 'chat' or 'agent'")
+            query = query.filter(Conversation.conversation_type == conversation_type)
+        
+        conversations = query\
             .order_by(Conversation.updated_at.desc())\
             .offset(skip)\
             .limit(limit)\
             .all()
         
-        logger.debug("conversations_listed", count=len(conversations), user_id=user_id)
+        logger.debug("conversations_listed", count=len(conversations), user_id=user_id, conversation_type=conversation_type)
         return conversations
     
     def update_title(self, conversation_id: int, title: str, user_id: str = None) -> Optional[Conversation]:

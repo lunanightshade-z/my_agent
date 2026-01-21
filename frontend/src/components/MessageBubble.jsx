@@ -217,9 +217,12 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                     // 段落
                     p: ({ children }) => <p className="mb-3 last:mb-0 text-gray-200 leading-relaxed">{children}</p>,
                     // 标题
-                    h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-gray-100">{children}</h1>,
-                    h2: ({ children }) => <h2 className="text-lg font-bold mb-3 text-gray-100">{children}</h2>,
-                    h3: ({ children }) => <h3 className="text-base font-bold mb-2 text-gray-100">{children}</h3>,
+                    h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-lg font-bold mb-3 text-white">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-base font-bold mb-2 text-white">{children}</h3>,
+                    h4: ({ children }) => <h4 className="text-sm font-bold mb-2 text-white">{children}</h4>,
+                    h5: ({ children }) => <h5 className="text-sm font-bold mb-2 text-white">{children}</h5>,
+                    h6: ({ children }) => <h6 className="text-sm font-bold mb-2 text-white">{children}</h6>,
                     // 列表
                     ul: ({ children }) => <ul className="list-disc pl-5 mb-3 text-gray-200 space-y-1">{children}</ul>,
                     ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 text-gray-200 space-y-1">{children}</ol>,
@@ -230,6 +233,9 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                         {children}
                       </a>
                     ),
+                    // 强调（加粗）
+                    strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                    em: ({ children }) => <em className="italic text-gray-100">{children}</em>,
                   }}
                 >
                   {message.content}

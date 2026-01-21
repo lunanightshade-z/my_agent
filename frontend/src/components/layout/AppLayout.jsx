@@ -110,10 +110,10 @@ const AppLayout = ({ children }) => {
 
     if (!conversationId) {
       try {
-        const newConv = await createConversation();
+        const newConv = await createConversation('新对话', 'chat');
         conversationId = newConv.id;
         dispatch(setCurrentConversation(conversationId));
-        const updatedConvs = await getConversations();
+        const updatedConvs = await getConversations('chat');
         dispatch(setConversations(updatedConvs));
       } catch (error) {
         dispatch(
@@ -142,7 +142,7 @@ const AppLayout = ({ children }) => {
         if (isFirstMessage) {
           try {
             await generateConversationTitle(conversationId, message);
-            const updatedConvs = await getConversations();
+            const updatedConvs = await getConversations('chat');
             dispatch(setConversations(updatedConvs));
           } catch (e) {
             // eslint-disable-next-line no-console
@@ -150,7 +150,7 @@ const AppLayout = ({ children }) => {
           }
         } else {
           try {
-            const updatedConvs = await getConversations();
+            const updatedConvs = await getConversations('chat');
             dispatch(setConversations(updatedConvs));
           } catch (e) {
             // eslint-disable-next-line no-console

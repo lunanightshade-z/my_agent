@@ -20,16 +20,23 @@ const apiClient = axios.create({
 /**
  * 创建新对话
  */
-export const createConversation = async (title = '新对话') => {
-  const response = await apiClient.post('/conversations', { title });
+export const createConversation = async (title = '新对话', conversationType = 'chat') => {
+  const response = await apiClient.post('/conversations', { 
+    title,
+    conversation_type: conversationType
+  });
   return response.data;
 };
 
 /**
  * 获取所有对话列表
  */
-export const getConversations = async () => {
-  const response = await apiClient.get('/conversations');
+export const getConversations = async (conversationType = null) => {
+  const params = {};
+  if (conversationType) {
+    params.conversation_type = conversationType;
+  }
+  const response = await apiClient.get('/conversations', { params });
   return response.data.conversations;
 };
 

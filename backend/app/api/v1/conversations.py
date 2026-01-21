@@ -32,7 +32,11 @@ def create_conversation(
     """创建新的对话会话（每个游客都有独立的会话空间）"""
     try:
         user_id = get_or_create_user_id(request, response)
-        db_conversation = repo.create(title=conversation.title, user_id=user_id)
+        db_conversation = repo.create(
+            title=conversation.title, 
+            user_id=user_id,
+            conversation_type=conversation.conversation_type or "chat"
+        )
         return db_conversation
     except Exception as e:
         logger.error("conversation_creation_failed", error=str(e))
@@ -48,12 +52,18 @@ def get_conversations(
     response: Response,
     skip: int = 0,
     limit: int = 100,
+    conversation_type: str = None,
     repo: ConversationRepository = Depends(get_conversation_repository)
 ):
     """获取当前游客的所有对话会话列表（按更新时间倒序）"""
     try:
         user_id = get_or_create_user_id(request, response)
-        conversations = repo.get_all(skip=skip, limit=limit, user_id=user_id)
+        conversations = repo.get_all(
+            skip=skip, 
+            limit=limit, 
+            user_id=user_id,
+            conversation_type=conversation_type
+        )
         return {"conversations": conversations}
     except Exception as e:
         logger.error("conversations_list_failed", error=str(e))

@@ -28,7 +28,7 @@ const ChatHistory = () => {
   // 加载会话列表
   const loadConversations = async () => {
     try {
-      const convs = await getConversations();
+      const convs = await getConversations('chat');
       dispatch(setConversations(convs));
     } catch (error) {
       console.error('加载会话列表失败:', error);
@@ -46,7 +46,7 @@ const ChatHistory = () => {
       dispatch(setMessages(messages));
       
       // 重新加载会话列表以获取最新信息（标题、更新时间等）
-      const updatedConvs = await getConversations();
+      const updatedConvs = await getConversations('chat');
       dispatch(setConversations(updatedConvs));
     } catch (error) {
       console.error('加载消息失败:', error);
@@ -70,13 +70,13 @@ const ChatHistory = () => {
   // 创建新对话
   const handleNewChat = async () => {
     try {
-      const newConv = await createConversation();
+      const newConv = await createConversation('新对话', 'chat');
       dispatch(addConversation(newConv));
       dispatch(setCurrentConversation(newConv.id));
       dispatch(setMessages([]));
       
       // 重新加载会话列表以获取最新信息
-      const updatedConvs = await getConversations();
+      const updatedConvs = await getConversations('chat');
       dispatch(setConversations(updatedConvs));
     } catch (error) {
       console.error('创建新对话失败:', error);

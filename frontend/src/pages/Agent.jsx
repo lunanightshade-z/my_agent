@@ -79,7 +79,7 @@ export default function Agent() {
   useEffect(() => {
     const loadConversations = async () => {
       try {
-        const convs = await getConversations();
+        const convs = await getConversations('agent');
         dispatch(setConversations(convs));
       } catch (error) {
         console.error('加载会话列表失败:', error);
@@ -127,11 +127,11 @@ export default function Agent() {
     
     if (!conversationId) {
       try {
-        const newConv = await createConversation();
+        const newConv = await createConversation('新对话', 'agent');
         conversationId = newConv.id;
         skipNextLoadRef.current = true;
         dispatch(setCurrentConversation(conversationId));
-        const updatedConvs = await getConversations();
+        const updatedConvs = await getConversations('agent');
         dispatch(setConversations(updatedConvs));
       } catch (error) {
         dispatch(addToast({
@@ -182,14 +182,14 @@ export default function Agent() {
         if (isFirstMessage) {
           try {
             await generateConversationTitle(conversationId, message);
-            const updatedConvs = await getConversations();
+            const updatedConvs = await getConversations('agent');
             dispatch(setConversations(updatedConvs));
           } catch (error) {
             console.error('生成标题失败:', error);
           }
         } else {
           try {
-            const updatedConvs = await getConversations();
+            const updatedConvs = await getConversations('agent');
             dispatch(setConversations(updatedConvs));
           } catch (error) {
             console.error('刷新会话列表失败:', error);
@@ -216,10 +216,10 @@ export default function Agent() {
   // 新建会话
   const handleNewConversation = async () => {
     try {
-      const newConv = await createConversation();
+      const newConv = await createConversation('新对话', 'agent');
       dispatch(setCurrentConversation(newConv.id));
       dispatch(setMessages([]));
-      const updatedConvs = await getConversations();
+      const updatedConvs = await getConversations('agent');
       dispatch(setConversations(updatedConvs));
     } catch (error) {
       dispatch(addToast({
