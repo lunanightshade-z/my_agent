@@ -234,8 +234,11 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                       </a>
                     ),
                     // 强调（加粗）
-                    strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
-                    em: ({ children }) => <em className="italic text-gray-100">{children}</em>,
+                    strong: ({ children }) => <strong style={{ fontWeight: '700', color: '#ffffff' }}>{children}</strong>,
+                    // 加粗别名
+                    b: ({ children }) => <b style={{ fontWeight: '700', color: '#ffffff' }}>{children}</b>,
+                    em: ({ children }) => <em style={{ fontStyle: 'italic', color: '#e5e5e5' }}>{children}</em>,
+                    i: ({ children }) => <i style={{ fontStyle: 'italic', color: '#e5e5e5' }}>{children}</i>,
                   }}
                 >
                   {message.content}
