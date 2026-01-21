@@ -12,7 +12,7 @@ import uuid
 from app.config import settings
 from app.infrastructure.logging.setup import get_logger
 from app.infrastructure.database.connection import engine, Base
-from app.api.v1 import conversations, messages, chat
+from app.api.v1 import conversations, messages, chat, agent
 
 logger = get_logger(__name__)
 
@@ -215,6 +215,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(conversations.router, prefix=settings.API_V1_PREFIX)
 app.include_router(messages.router, prefix=settings.API_V1_PREFIX)
 app.include_router(chat.router, prefix=settings.API_V1_PREFIX)
+app.include_router(agent.router, prefix=settings.API_V1_PREFIX)
 
 
 # ==================== 基础端点 ====================

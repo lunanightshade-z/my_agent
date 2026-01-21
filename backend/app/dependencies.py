@@ -11,6 +11,7 @@ from app.infrastructure.database.repositories import (
     MessageRepository
 )
 from app.services.chat_service import ChatService
+from app.services.agent_service import AgentService
 from app.config import get_settings, Settings
 
 # Cookie名称常量
@@ -76,3 +77,8 @@ def get_message_repository(db: Session = Depends(get_db)) -> MessageRepository:
 def get_chat_service(db: Session = Depends(get_db)) -> ChatService:
     """获取聊天服务"""
     return ChatService(db)
+
+
+def get_agent_service(db: Session = Depends(get_db)) -> AgentService:
+    """获取智能体服务"""
+    return AgentService(db)

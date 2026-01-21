@@ -15,13 +15,19 @@ function App() {
   return (
     <Provider store={store}>
       <Router basename="/">
-        <AppLayout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/agent" element={<Agent />} />
-          </Routes>
-        </AppLayout>
+        <Routes>
+          {/* Agent页面独立渲染，不经过AppLayout */}
+          <Route path="/agent" element={<Agent />} />
+          {/* 其他页面经过AppLayout */}
+          <Route path="/*" element={
+            <AppLayout>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/chat" element={<Chat />} />
+              </Routes>
+            </AppLayout>
+          } />
+        </Routes>
       </Router>
     </Provider>
   );

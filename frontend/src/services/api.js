@@ -186,3 +186,115 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
     });
 };
 
+
+// ==================== 智能体 API ====================
+
+/**
+ * 发送智能体消息（流式 - 支持工具调用）
+ * 使用 fetch 处理 SSE 流式响应
+ */
+export const sendAgentMessageStream = (conversationId, message, onToolCall, onToolResult, onChunk, onDone, onError) => {
+  const url = `${API_BASE_URL}/agent/stream`;
+  
+  let buffer = '';
+  
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      conversation_id: conversationId,
+      message: message,
+      thinking_enabled: false, // 智能体不使用thinking模式
+    }),
+  })
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(text => {
+          throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+        });
+      }
+      
+      if (!response.body) {
+        throw new Error('响应体为空');
+      }
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      
+      const readStream = () => {
+        reader.read()
+          .then(({ done, value }) => {
+            if (done) {
+              if (buffer.trim()) {
+                processBuffer(buffer);
+                buffer = '';
+              }
+              onDone();
+              return;
+            }
+            
+            const chunk = decoder.decode(value, { stream: true });
+            buffer += chunk;
+            
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop() || '';
+            
+            parts.forEach(part => {
+              processBuffer(part);
+            });
+            
+            readStream();
+          })
+          .catch(error => {
+            console.error('读取流失败:', error);
+            onError(error.message || '读取流失败');
+          });
+      };
+      
+      const processBuffer = (data) => {
+        const lines = data.split('\n');
+        
+        lines.forEach(line => {
+          line = line.trim();
+          if (!line) return;
+          
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) return;
+            
+            try {
+              const parsed = JSON.parse(jsonStr);
+              
+              if (parsed.type === 'tool_call') {
+                // 工具调用
+                onToolCall(parsed);
+              } else if (parsed.type === 'tool_result') {
+                // 工具结果
+                onToolResult(parsed);
+              } else if (parsed.type === 'delta' && parsed.content !== undefined) {
+                // 回答内容增量
+                onChunk(parsed.content);
+              } else if (parsed.type === 'done') {
+                // 完成信号
+                onDone();
+              } else if (parsed.type === 'error') {
+                // 错误信息
+                onError(parsed.content || parsed.error || '未知错误');
+              }
+            } catch (e) {
+              console.error('解析 SSE 数据失败:', e, '原始数据:', jsonStr);
+            }
+          }
+        });
+      };
+      
+      readStream();
+    })
+    .catch(error => {
+      console.error('请求失败:', error);
+      onError(error.message || '请求失败');
+    });
+};
+

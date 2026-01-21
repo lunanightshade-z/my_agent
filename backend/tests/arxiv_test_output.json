@@ -1,0 +1,71 @@
+{
+  "query": "all:neural network",
+  "total_results": 3,
+  "papers": [
+    {
+      "arxiv_id": "1609.04846v1",
+      "title": "A Tutorial about Random Neural Networks in Supervised Learning",
+      "summary": "Random Neural Networks (RNNs) are a class of Neural Networks (NNs) that can also be seen as a specific type of queuing network. They have been successfully used in several domains during the last 25 years, as queuing networks to analyze the performance of resource sharing in many engineering areas, as learning tools and in combinatorial optimization, where they are seen as neural systems, and also as models of neurological aspects of living beings. In this article we focus on their learning capabilities, and more specifically, we present a practical guide for using the RNN to solve supervised learning problems. We give a general description of these models using almost indistinctly the terminology of Queuing Theory and the neural one. We present the standard learning procedures used by RNNs, adapted from similar well-established improvements in the standard NN field. We describe in particular a set of learning algorithms covering techniques based on the use of first order and, then, of second order derivatives. We also discuss some issues related to these objects and present new perspectives about their use in supervised learning problems. The tutorial describes their most relevant applications, and also provides a large bibliography.",
+      "authors": [
+        "Sebastián Basterrech",
+        "Gerardo Rubino"
+      ],
+      "published": "2016-09-15T20:21:30Z",
+      "updated": "2016-09-15T20:21:30Z",
+      "pdf_url": "https://arxiv.org/pdf/1609.04846v1",
+      "arxiv_url": "https://arxiv.org/abs/1609.04846v1",
+      "primary_category": null,
+      "categories": [
+        "cs.NE"
+      ],
+      "comment": null
+    },
+    {
+      "arxiv_id": "2502.01654v1",
+      "title": "Predicting concentration levels of air pollutants by transfer learning and recurrent neural network",
+      "summary": "Air pollution (AP) poses a great threat to human health, and people are paying more attention than ever to its prediction. Accurate prediction of AP helps people to plan for their outdoor activities and aids protecting human health. In this paper, long-short term memory (LSTM) recurrent neural networks (RNNs) have been used to predict the future concentration of air pollutants (APS) in Macau. Additionally, meteorological data and data on the concentration of APS have been utilized. Moreover, in Macau, some air quality monitoring stations (AQMSs) have less observed data in quantity, and, at the same time, some AQMSs recorded less observed data of certain types of APS. Therefore, the transfer learning and pre-trained neural networks have been employed to assist AQMSs with less observed data to build a neural network with high prediction accuracy. The experimental sample covers a period longer than 12-year and includes daily measurements from several APS as well as other more classical meteorological values. Records from five stations, four out of them are AQMSs and the remaining one is an automatic weather station, have been prepared from the aforesaid period and eventually underwent to computational intelligence techniques to build and extract a prediction knowledge-based system. As shown by experimentation, LSTM RNNs initialized with transfer learning methods have higher prediction accuracy; it incurred shorter training time than randomly initialized recurrent neural networks.",
+      "authors": [
+        "Iat Hang Fong",
+        "Tengyue Li",
+        "Simon Fong",
+        "Raymond K. Wong",
+        "Antonio J. Tallón-Ballesteros"
+      ],
+      "published": "2025-01-30T23:39:19Z",
+      "updated": "2025-01-30T23:39:19Z",
+      "pdf_url": "https://arxiv.org/pdf/2502.01654v1",
+      "arxiv_url": "https://arxiv.org/abs/2502.01654v1",
+      "primary_category": null,
+      "categories": [
+        "cs.LG",
+        "cs.NE",
+        "physics.ao-ph"
+      ],
+      "comment": null
+    },
+    {
+      "arxiv_id": "1803.02421v2",
+      "title": "Masked Conditional Neural Networks for Audio Classification",
+      "summary": "We present the ConditionaL Neural Network (CLNN) and the Masked ConditionaL Neural Network (MCLNN) designed for temporal signal recognition. The CLNN takes into consideration the temporal nature of the sound signal and the MCLNN extends upon the CLNN through a binary mask to preserve the spatial locality of the features and allows an automated exploration of the features combination analogous to hand-crafting the most relevant features for the recognition task. MCLNN has achieved competitive recognition accuracies on the GTZAN and the ISMIR2004 music datasets that surpass several state-of-the-art neural network based architectures and hand-crafted methods applied on both datasets.",
+      "authors": [
+        "Fady Medhat",
+        "David Chesmore",
+        "John Robinson"
+      ],
+      "published": "2018-03-06T20:54:00Z",
+      "updated": "2019-03-23T10:56:33Z",
+      "pdf_url": "https://arxiv.org/pdf/1803.02421v2",
+      "arxiv_url": "https://arxiv.org/abs/1803.02421v2",
+      "primary_category": null,
+      "categories": [
+        "stat.ML",
+        "cs.LG",
+        "cs.SD",
+        "eess.AS"
+      ],
+      "comment": null
+    }
+  ],
+  "search_time": "2026-01-20T18:10:43.139377",
+  "paper_count": 3
+}

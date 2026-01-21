@@ -10,6 +10,9 @@ services:
     env_file:
       - .env
     environment:
+      # 时区配置
+      - TZ=Asia/Shanghai
+      
       # 应用配置
       - APP_NAME=AI Agent Platform
       - ENVIRONMENT=production
@@ -49,6 +52,8 @@ services:
     container_name: ai_agent_redis
     ports:
       - "6380:6379"  # 使用6380避免端口冲突
+    environment:
+      - TZ=Asia/Shanghai
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -64,6 +69,8 @@ services:
     container_name: ai_agent_nginx
     ports:
       - "28888:80"  # 【特殊端口】使用28888端口
+    environment:
+      - TZ=Asia/Shanghai
     depends_on:
       - api
     restart: unless-stopped

@@ -85,11 +85,13 @@ const AppLayout = ({ children }) => {
   }, [isChatPage]);
 
   // 非 Chat 页面直接渲染 children（Home / Agent）
+  // Agent页面自己管理返回首页按钮，不需要导航栏
   if (!isChatPage) {
+    const isAgentPage = location.pathname === '/agent';
     return (
       <div className="relative w-full min-h-screen overflow-hidden">
-        {showMagicNavbar && <MagicNavbar />}
-        <div className={showMagicNavbar ? 'pt-24' : ''}>
+        {!isAgentPage && showMagicNavbar && <MagicNavbar />}
+        <div className={!isAgentPage && showMagicNavbar ? 'pt-24' : ''}>
           {children}
         </div>
       </div>
