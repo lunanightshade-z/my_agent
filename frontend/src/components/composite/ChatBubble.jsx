@@ -246,6 +246,12 @@ const ChatBubble= ({
                         {children}
                       </a>
                     ),
+                    strong: ({ children }) => (
+                      <strong style={{ color: '#ffffff', fontWeight: 700 }}>{children}</strong>
+                    ),
+                    b: ({ children }) => (
+                      <b style={{ color: '#ffffff', fontWeight: 700 }}>{children}</b>
+                    ),
                   }}
                 >
                   {message.content}
