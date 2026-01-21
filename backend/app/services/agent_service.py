@@ -2,18 +2,46 @@
 智能体服务层
 集成Agent工具调用功能
 """
-from typing import AsyncGenerator, Dict
+import os
+import sys
+from pathlib import Path
+from typing import AsyncGenerator, Dict, Generator, List, Any
+
 from sqlalchemy.orm import Session
+
+from app.config import settings
 from app.infrastructure.database.repositories import (
     ConversationRepository,
     MessageRepository
 )
-from app.config import settings
 from app.infrastructure.logging.setup import get_logger
-import os
-import sys
-from pathlib import Path
 
+# ==================== 配置常量 ====================
+# Agent模型配置
+AGENT_MODEL_NAME = "qwen3-235b-instruct"
+AGENT_MAX_TOOL_ITERATIONS = 5
+AGENT_TEMPERATURE = 0.7
+
+# Agent系统提示词
+AGENT_SYSTEM_PROMPT = """你是一个智能新闻助手，可以帮助用户获取和分析最新的RSS新闻。
+
+你有以下能力：
+1. 获取最新的RSS新闻（来自FT中文网、BBC中文、极客公园、少数派等多个优质新闻源）
+2. 根据用户的问题智能筛选相关新闻
+3. 根据关键词搜索新闻
+
+当用户询问新闻或资讯时，请合理使用这些工具。回答要简洁明了，结构化展示。"""
+
+# 环境变量配置键
+ENV_QWEN_API_KEY = "QWEN_API_KEY"
+ENV_QWEN_API_BASE_URL = "QWEN_API_BASE_URL"
+
+# 标题生成配置
+TITLE_MAX_LENGTH = 20
+TITLE_ELLIPSIS = "..."
+DEFAULT_CONVERSATION_TITLE = "智能体对话"
+
+# ==================== 模块导入 ====================
 # 导入智能体模块 - 修正路径
 backend_path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(backend_path))
@@ -46,45 +74,67 @@ class AgentService:
     def _get_agent(self) -> Agent:
         """获取或创建智能体实例（单例）"""
         if self._agent is None:
-            # 从环境变量读取配置
-            api_key = os.getenv("QWEN_API_KEY")
-            base_url = os.getenv("QWEN_API_BASE_URL")
-            
-            if not api_key or not base_url:
-                raise ValueError("QWEN_API_KEY 或 QWEN_API_BASE_URL 未配置")
-            
-            # 创建智能体配置
-            config = AgentConfig(
-                model="qwen3-235b-instruct",
-                api_key=api_key,
-                base_url=base_url,
-                system_prompt="""你是一个智能新闻助手，可以帮助用户获取和分析最新的RSS新闻。
-
-你有以下能力：
-1. 获取最新的RSS新闻（来自FT中文网、BBC中文、极客公园、少数派等多个优质新闻源）
-2. 根据用户的问题智能筛选相关新闻
-3. 根据关键词搜索新闻
-
-当用户询问新闻或资讯时，请合理使用这些工具。回答要简洁明了，结构化展示。""",
-                max_tool_iterations=5,
-                temperature=0.7
-            )
-            
-            # 创建智能体
-            self._agent = Agent(config)
-            
-            # 注册RSS工具
-            for tool_def in RSS_TOOLS_DEFINITIONS:
-                self._agent.register_tool(
-                    name=tool_def["name"],
-                    description=tool_def["description"],
-                    parameters=tool_def["parameters"],
-                    function=tool_def["function"]
-                )
-            
-            logger.info("智能体已初始化", tools_count=len(RSS_TOOLS_DEFINITIONS))
+            self._agent = self._create_agent()
         
         return self._agent
+    
+    def _create_agent(self) -> Agent:
+        """
+        创建并配置智能体实例
+        
+        Returns:
+            Agent: 配置好的智能体实例
+            
+        Raises:
+            ValueError: 当必需的环境变量未配置时
+        """
+        # 从环境变量读取配置
+        api_key = os.getenv(ENV_QWEN_API_KEY)
+        base_url = os.getenv(ENV_QWEN_API_BASE_URL)
+        
+        if not api_key or not base_url:
+            raise ValueError(
+                f"{ENV_QWEN_API_KEY} 或 {ENV_QWEN_API_BASE_URL} 未配置"
+            )
+        
+        # 创建智能体配置
+        config = AgentConfig(
+            model=AGENT_MODEL_NAME,
+            api_key=api_key,
+            base_url=base_url,
+            system_prompt=AGENT_SYSTEM_PROMPT,
+            max_tool_iterations=AGENT_MAX_TOOL_ITERATIONS,
+            temperature=AGENT_TEMPERATURE
+        )
+        
+        # 创建智能体
+        agent = Agent(config)
+        
+        # 注册RSS工具
+        self._register_rss_tools(agent)
+        
+        logger.info(
+            "智能体已初始化",
+            model=AGENT_MODEL_NAME,
+            tools_count=len(RSS_TOOLS_DEFINITIONS)
+        )
+        
+        return agent
+    
+    def _register_rss_tools(self, agent: Agent) -> None:
+        """
+        注册RSS工具到智能体
+        
+        Args:
+            agent: 智能体实例
+        """
+        for tool_def in RSS_TOOLS_DEFINITIONS:
+            agent.register_tool(
+                name=tool_def["name"],
+                description=tool_def["description"],
+                parameters=tool_def["parameters"],
+                function=tool_def["function"]
+            )
     
     async def chat_stream(
         self,
@@ -142,60 +192,24 @@ class AgentService:
         try:
             agent = self._get_agent()
             
-            for chunk in agent.chat_stream(messages):
-                chunk_type = chunk.get("type")
-                chunk_content = chunk.get("content", "")
-                
-                if chunk_type == "text":
-                    # 文本内容
-                    full_response += chunk_content
-                    yield {"type": "delta", "content": chunk_content}
-                
-                elif chunk_type == "tool_call":
-                    # 工具调用信息
-                    tool_name = chunk.get("tool_name", "unknown")
-                    tool_args = chunk.get("tool_arguments", {})
-                    tool_calls_info.append({
-                        "name": tool_name,
-                        "arguments": tool_args
-                    })
-                    
-                    # 发送工具调用通知给前端
-                    yield {
-                        "type": "tool_call",
-                        "content": f"正在调用工具: {tool_name}",
-                        "tool_name": tool_name,
-                        "tool_arguments": tool_args
-                    }
-                
-                elif chunk_type == "tool_result":
-                    # 工具结果
-                    tool_name = chunk.get("tool_name", "unknown")
-                    yield {
-                        "type": "tool_result",
-                        "content": f"工具 {tool_name} 执行完成",
-                        "tool_name": tool_name
-                    }
-                
-                elif chunk_type == "done":
-                    # 完成信号
-                    break
-                
-                elif chunk_type == "error":
-                    # 错误信息
-                    yield {"type": "error", "content": chunk_content}
+            for chunk in self._process_agent_stream(
+                agent.chat_stream(messages),
+                tool_calls_info
+            ):
+                if chunk.get("type") == "error":
                     return
+                
+                # 只累计文本内容
+                if chunk.get("type") == "delta":
+                    full_response += chunk.get("content", "")
+                
+                yield chunk
             
-            # 保存助手回复
-            self.message_repo.create(
+            # 保存助手回复和更新会话
+            self._save_conversation_response(
                 conversation_id=conversation_id,
-                role="assistant",
-                content=full_response,
-                thinking_mode=False
+                response=full_response
             )
-            
-            # 更新会话时间戳
-            self.conversation_repo.update_timestamp(conversation_id)
             
             # 发送完成信号
             yield {"type": "done"}
@@ -216,7 +230,85 @@ class AgentService:
             )
             yield {"type": "error", "content": f"智能体处理失败: {str(e)}"}
     
-    async def generate_title(self, conversation_id: int, first_message: str, user_id: str = None) -> str:
+    def _process_agent_stream(
+        self,
+        stream: Generator[Dict[str, Any], None, None],
+        tool_calls_info: List[Dict[str, Any]]
+    ) -> Generator[Dict[str, Any], None, None]:
+        """
+        处理智能体流式响应
+        
+        Args:
+            stream: 智能体流式响应生成器
+            tool_calls_info: 工具调用信息列表（用于记录）
+            
+        Yields:
+            处理后的响应块
+        """
+        for chunk in stream:
+            chunk_type = chunk.get("type")
+            chunk_content = chunk.get("content", "")
+            
+            if chunk_type == "text":
+                yield {"type": "delta", "content": chunk_content}
+            
+            elif chunk_type == "tool_call":
+                tool_name = chunk.get("tool_name", "unknown")
+                tool_args = chunk.get("tool_arguments", {})
+                tool_calls_info.append({
+                    "name": tool_name,
+                    "arguments": tool_args
+                })
+                
+                yield {
+                    "type": "tool_call",
+                    "content": f"正在调用工具: {tool_name}",
+                    "tool_name": tool_name,
+                    "tool_arguments": tool_args
+                }
+            
+            elif chunk_type == "tool_result":
+                tool_name = chunk.get("tool_name", "unknown")
+                yield {
+                    "type": "tool_result",
+                    "content": f"工具 {tool_name} 执行完成",
+                    "tool_name": tool_name
+                }
+            
+            elif chunk_type == "done":
+                break
+            
+            elif chunk_type == "error":
+                yield {"type": "error", "content": chunk_content}
+                return
+    
+    def _save_conversation_response(
+        self,
+        conversation_id: int,
+        response: str
+    ) -> None:
+        """
+        保存助手回复并更新会话时间戳
+        
+        Args:
+            conversation_id: 会话ID
+            response: 助手回复内容
+        """
+        self.message_repo.create(
+            conversation_id=conversation_id,
+            role="assistant",
+            content=response,
+            thinking_mode=False
+        )
+        
+        self.conversation_repo.update_timestamp(conversation_id)
+    
+    async def generate_title(
+        self,
+        conversation_id: int,
+        first_message: str,
+        user_id: str = None
+    ) -> str:
         """
         生成会话标题
         
@@ -229,13 +321,13 @@ class AgentService:
             生成的标题
         """
         try:
-            # 简单的标题生成策略：取前20个字符
-            title = first_message[:20]
-            if len(first_message) > 20:
-                title += "..."
+            title = self._extract_title_from_message(first_message)
             
-            # 更新会话标题
-            self.conversation_repo.update_title(conversation_id, title, user_id=user_id)
+            self.conversation_repo.update_title(
+                conversation_id,
+                title,
+                user_id=user_id
+            )
             
             logger.info(
                 "agent_title_generated",
@@ -252,6 +344,26 @@ class AgentService:
                 error=str(e)
             )
             # 失败时使用默认标题
-            fallback_title = "智能体对话"
-            self.conversation_repo.update_title(conversation_id, fallback_title, user_id=user_id)
-            return fallback_title
+            self.conversation_repo.update_title(
+                conversation_id,
+                DEFAULT_CONVERSATION_TITLE,
+                user_id=user_id
+            )
+            return DEFAULT_CONVERSATION_TITLE
+    
+    def _extract_title_from_message(self, message: str) -> str:
+        """
+        从消息中提取标题
+        
+        策略：取前N个字符，超过则添加省略号
+        
+        Args:
+            message: 用户消息
+            
+        Returns:
+            提取的标题
+        """
+        if len(message) <= TITLE_MAX_LENGTH:
+            return message
+        
+        return message[:TITLE_MAX_LENGTH] + TITLE_ELLIPSIS

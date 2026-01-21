@@ -1,0 +1,415 @@
+/**
+ * Markdown 消息样式
+ * 统一管理所有markdown相关的样式，方便集中调整
+ */
+
+/* ============ 整体容器 ============ */
+.markdown-message {
+  line-height: 1.7;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ============ 排版元素 ============ */
+
+/* 段落 */
+.markdown-paragraph {
+  margin: 0.75rem 0;
+  color: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+}
+
+.markdown-paragraph:first-child {
+  margin-top: 0;
+}
+
+.markdown-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* 标题 */
+.heading {
+  margin: 1.5rem 0 0.75rem 0;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  color: inherit;
+}
+
+.heading-h1 {
+  font-size: 1.8rem;
+  margin-top: 2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(0, 255, 255, 0.2);
+}
+
+.heading-h2 {
+  font-size: 1.5rem;
+  margin-top: 1.75rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.15);
+}
+
+.heading-h3 {
+  font-size: 1.3rem;
+  color: rgba(0, 255, 255, 0.95);
+}
+
+.heading-h4 {
+  font-size: 1.1rem;
+  color: rgba(0, 255, 255, 0.9);
+}
+
+.heading-h5 {
+  font-size: 1rem;
+  color: rgba(0, 255, 255, 0.85);
+}
+
+.heading-h6 {
+  font-size: 0.95rem;
+  color: rgba(0, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+/* ============ 代码样式 ============ */
+
+/* 行内代码 */
+.inline-code {
+  font-family: 'Fira Code', 'Monaco', 'Courier New', monospace;
+  background: rgba(0, 255, 255, 0.15);
+  color: #00ffff;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+  white-space: break-spaces;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  transition: all 0.2s ease-out;
+}
+
+.inline-code:hover {
+  background: rgba(0, 255, 255, 0.25);
+  border-color: rgba(0, 255, 255, 0.5);
+}
+
+/* 代码块包装器 */
+.code-block-wrapper {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 代码块头部 */
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.15);
+}
+
+/* 语言标签 */
+.code-language {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: rgba(0, 255, 255, 0.7);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 复制按钮 */
+.copy-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 4px;
+  color: rgba(0, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease-out;
+}
+
+.copy-button:hover {
+  background: rgba(0, 255, 255, 0.2);
+  border-color: rgba(0, 255, 255, 0.5);
+  color: #00ffff;
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+}
+
+.copy-button:active {
+  transform: scale(0.95);
+}
+
+/* ============ 列表样式 ============ */
+
+.markdown-list {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+/* 无序列表 */
+.unordered-list {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.unordered-item {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  color: inherit;
+}
+
+/* 自定义无序列表项前缀 */
+.unordered-item::before {
+  content: '◦';
+  position: absolute;
+  left: 0;
+  color: rgba(0, 255, 255, 0.7);
+  font-weight: bold;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+/* 有序列表 */
+.ordered-list {
+  list-style-type: decimal;
+  padding-left: 1.75rem;
+}
+
+.ordered-item {
+  margin: 0.5rem 0;
+  color: inherit;
+}
+
+/* 嵌套列表 */
+.markdown-list .markdown-list {
+  margin: 0.5rem 0;
+}
+
+/* ============ 引用块 ============ */
+
+.markdown-blockquote {
+  margin: 1.25rem 0;
+  padding: 1rem 1rem 1rem 1.25rem;
+  background: rgba(0, 255, 255, 0.08);
+  border-left: 4px solid rgba(0, 255, 255, 0.5);
+  border-radius: 0 4px 4px 0;
+  color: rgba(226, 232, 240, 0.9);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  transition: all 0.2s ease-out;
+}
+
+.markdown-blockquote:hover {
+  background: rgba(0, 255, 255, 0.12);
+  border-left-color: rgba(0, 255, 255, 0.7);
+}
+
+.markdown-blockquote > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-blockquote > *:last-child {
+  margin-bottom: 0;
+}
+
+/* ============ 链接 ============ */
+
+.markdown-link {
+  color: rgba(0, 255, 255, 0.9);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: all 0.2s ease-out;
+  cursor: pointer;
+}
+
+.markdown-link:hover {
+  color: #00ffff;
+  text-decoration-style: solid;
+  text-decoration-thickness: 2px;
+}
+
+/* ============ 表格样式 ============ */
+
+.table-wrapper {
+  margin: 1.25rem 0;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.markdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.9rem;
+}
+
+.table-header-row {
+  background: rgba(0, 255, 255, 0.15);
+  border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+}
+
+.table-body-row {
+  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+  transition: background-color 0.2s ease-out;
+}
+
+.table-body-row:hover {
+  background: rgba(0, 255, 255, 0.08);
+}
+
+.table-header-cell {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: rgba(0, 255, 255, 0.95);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.table-body-cell {
+  padding: 0.75rem 1rem;
+  color: inherit;
+}
+
+/* ============ 分割线 ============ */
+
+.markdown-hr {
+  margin: 1.5rem 0;
+  border: none;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 255, 255, 0.3),
+    transparent
+  );
+  border-radius: 1px;
+}
+
+/* ============ 强调和删除线 ============ */
+
+strong,
+b {
+  font-weight: 700;
+  color: rgba(0, 255, 255, 0.95);
+}
+
+em,
+i {
+  font-style: italic;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+del,
+s {
+  text-decoration: line-through;
+  color: rgba(226, 232, 240, 0.65);
+}
+
+u {
+  text-decoration: underline;
+  text-decoration-style: solid;
+  text-underline-offset: 2px;
+}
+
+/* ============ 响应式调整 ============ */
+
+@media (max-width: 768px) {
+  .heading-h1 {
+    font-size: 1.5rem;
+  }
+
+  .heading-h2 {
+    font-size: 1.3rem;
+  }
+
+  .heading-h3 {
+    font-size: 1.1rem;
+  }
+
+  .markdown-paragraph {
+    font-size: 0.9rem;
+  }
+
+  .code-block-wrapper {
+    margin: 0.75rem 0;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .markdown-list {
+    padding-left: 1.25rem;
+  }
+
+  .unordered-item {
+    padding-left: 1.25rem;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .markdown-table {
+    font-size: 0.8rem;
+  }
+
+  .table-header-cell,
+  .table-body-cell {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* ============ 深色模式特定样式 ============ */
+
+@media (prefers-color-scheme: dark) {
+  .markdown-message {
+    color: #e2e8f0;
+  }
+
+  .inline-code {
+    background: rgba(0, 255, 255, 0.15);
+    color: #00ffff;
+  }
+
+  strong,
+  b {
+    color: rgba(0, 255, 255, 0.95);
+  }
+}
+
+/* ============ 打印样式 ============ */
+
+@media print {
+  .copy-button {
+    display: none;
+  }
+
+  .code-block-header {
+    border-bottom: 1px solid #ccc;
+  }
+
+  .markdown-link {
+    text-decoration: underline;
+    color: #0066cc;
+  }
+}

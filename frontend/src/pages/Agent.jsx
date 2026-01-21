@@ -31,6 +31,7 @@ import {
   createConversation,
   getConversationMessages 
 } from '../services/api';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 // --- 组件：背景动态流体 ---
 // 使用纯CSS动画模拟流动的空气感背景
@@ -348,10 +349,10 @@ export default function Agent() {
                       style={{ animationDelay: `${idx * 0.1}s` }}
                     >
                       <div className={`
-                        relative max-w-[80%] md:max-w-[70%] p-6 rounded-3xl backdrop-blur-md border shadow-sm
+                        relative max-w-[80%] md:max-w-[70%] rounded-3xl backdrop-blur-md border shadow-sm
                         ${msg.role === 'user' 
-                          ? 'bg-slate-800/5 border-slate-200/50 text-slate-700 rounded-br-none' 
-                          : 'bg-white/70 border-white/60 text-slate-600 rounded-tl-none shadow-indigo-100/50'
+                          ? 'bg-slate-800/5 border-slate-200/50 text-slate-700 rounded-br-none p-6' 
+                          : 'bg-white/70 border-white/60 text-slate-600 rounded-tl-none shadow-indigo-100/50 p-6'
                         }
                       `}>
                         {/* Role Label */}
@@ -361,10 +362,21 @@ export default function Agent() {
                           {msg.role === 'user' ? 'user' : 'assistant'}
                         </span>
 
-                        <div className="whitespace-pre-wrap leading-relaxed text-[15px]">
-                          {msg.content || ''}
-                          {msg.isStreaming && (
-                            <span className="inline-block w-2 h-4 ml-1 bg-teal-500 animate-pulse" />
+                        <div className="text-[15px]">
+                          {msg.role === 'user' ? (
+                            <div className="whitespace-pre-wrap leading-relaxed">
+                              {msg.content || ''}
+                              {msg.isStreaming && (
+                                <span className="inline-block w-2 h-4 ml-1 bg-teal-500 animate-pulse" />
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              <MarkdownRenderer content={msg.content || ''} />
+                              {msg.isStreaming && (
+                                <span className="inline-block w-2 h-4 ml-1 bg-teal-500 animate-pulse" />
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
