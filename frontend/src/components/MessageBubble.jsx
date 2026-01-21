@@ -148,7 +148,7 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
             )
           ) : (
             // AI 消息（Markdown 渲染）
-            <div className="markdown-body prose prose-sm max-w-none">
+            <div className="chat-markdown-body">
               {/* 思考过程区域 */}
               {hasThinking && (
                 <motion.div
@@ -215,7 +215,7 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                       );
                     },
                     // 段落 - 不设置文本颜色，让子元素的样式生效
-                    p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed" style={{ color: 'inherit' }}>{children}</p>,
+                    p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed chat-markdown-paragraph">{children}</p>,
                     // 标题
                     h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
                     h2: ({ children }) => <h2 className="text-lg font-bold mb-3 text-white">{children}</h2>,
@@ -224,9 +224,9 @@ const MessageBubble = ({ message, isStreaming, onRegenerate, onEdit, messageInde
                     h5: ({ children }) => <h5 className="text-sm font-bold mb-2 text-white">{children}</h5>,
                     h6: ({ children }) => <h6 className="text-sm font-bold mb-2 text-white">{children}</h6>,
                     // 列表 - 不设置文本颜色
-                    ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>,
-                    li: ({ children }) => <li className="mb-1" style={{ color: '#e5e5e5' }}>{children}</li>,
+                    ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1 chat-markdown-list">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1 chat-markdown-list">{children}</ol>,
+                    li: ({ children }) => <li className="mb-1 chat-markdown-list-item">{children}</li>,
                     // 链接
                     a: ({ children, href }) => (
                       <a href={href} className="text-cyan-400 hover:text-cyan-300 underline transition-colors" target="_blank" rel="noopener noreferrer">

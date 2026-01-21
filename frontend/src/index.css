@@ -265,26 +265,100 @@ input:focus, textarea:focus {
   color: inherit;
 }
 
-/* 强调文本样式 */
-.markdown-body strong,
-.markdown-body b {
-  font-weight: 700;
-  color: #ffffff;
+/* ======================== Chat页面独立Markdown样式 ======================== */
+/* Chat页面使用独立的类名，避免与Agent页面样式冲突 */
+.chat-markdown-body {
+  line-height: 1.6;
+  max-width: 100%;
 }
 
-.markdown-body em,
-.markdown-body i {
-  font-style: italic;
+/* Chat页面 - 强调文本样式（最高优先级） */
+.chat-markdown-body strong,
+.chat-markdown-body b {
+  font-weight: 700 !important;
+  color: #ffffff !important;
+}
+
+.chat-markdown-body em,
+.chat-markdown-body i {
+  font-style: italic !important;
+  color: #e5e5e5 !important;
+}
+
+/* Chat页面 - 标题样式 */
+.chat-markdown-body h1,
+.chat-markdown-body h2,
+.chat-markdown-body h3,
+.chat-markdown-body h4,
+.chat-markdown-body h5,
+.chat-markdown-body h6 {
+  color: #ffffff !important;
+}
+
+/* Chat页面 - 段落样式（不设置颜色，让子元素样式生效） */
+.chat-markdown-body p,
+.chat-markdown-paragraph {
   color: #e5e5e5;
 }
 
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3,
-.markdown-body h4,
-.markdown-body h5,
-.markdown-body h6 {
-  color: #ffffff;
+/* 确保段落内的strong是白色 */
+.chat-markdown-paragraph strong,
+.chat-markdown-paragraph b {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* Chat页面 - 列表样式 */
+.chat-markdown-body ul,
+.chat-markdown-body ol,
+.chat-markdown-list {
+  color: inherit;
+}
+
+.chat-markdown-body li,
+.chat-markdown-list-item {
+  color: #e5e5e5;
+}
+
+/* Chat页面 - 确保列表中的strong也是白色（最高优先级） */
+.chat-markdown-body li strong,
+.chat-markdown-body li b,
+.chat-markdown-body p strong,
+.chat-markdown-body p b,
+.chat-markdown-list-item strong,
+.chat-markdown-list-item b,
+.chat-markdown-paragraph strong,
+.chat-markdown-paragraph b {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* Chat页面 - 链接样式 */
+.chat-markdown-body a {
+  color: #0ea5e9;
+}
+
+/* Chat页面 - 代码样式 */
+.chat-markdown-body code {
+  background: rgba(110, 231, 183, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: var(--text-primary);
+}
+
+.chat-markdown-body pre {
+  background: linear-gradient(135deg, rgba(110, 231, 183, 0.1), rgba(59, 130, 246, 0.1));
+  border: 1px solid rgba(110, 231, 183, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.chat-markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
 }
 
 /* ======================== 选择文本样式 ======================== */
