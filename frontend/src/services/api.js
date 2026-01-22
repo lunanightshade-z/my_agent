@@ -274,24 +274,43 @@ export const sendAgentMessageStream = (conversationId, message, onToolCall, onTo
             try {
               const parsed = JSON.parse(jsonStr);
               
+              // 添加日志记录
+              console.log('📡 [SSE Parser] 收到数据类型:', parsed.type);
+              
               if (parsed.type === 'tool_call') {
                 // 工具调用
+                console.log('🔧 [SSE Parser] 解析工具调用:', {
+                  tool_name: parsed.tool_name,
+                  has_arguments: !!parsed.tool_arguments
+                });
+                console.log('🔧 [SSE Parser] 工具调用完整数据:', parsed);
                 onToolCall(parsed);
               } else if (parsed.type === 'tool_result') {
                 // 工具结果
+                console.log('✅ [SSE Parser] 解析工具结果:', {
+                  tool_name: parsed.tool_name,
+                  content_length: parsed.content ? parsed.content.length : 0
+                });
                 onToolResult(parsed);
               } else if (parsed.type === 'delta' && parsed.content !== undefined) {
                 // 回答内容增量
+                console.log('📝 [SSE Parser] 回答内容增量 (长度: ' + parsed.content.length + ')');
                 onChunk(parsed.content);
               } else if (parsed.type === 'done') {
                 // 完成信号
+                console.log('🏁 [SSE Parser] 流式响应完成信号');
                 onDone();
               } else if (parsed.type === 'error') {
                 // 错误信息
+                console.error('❌ [SSE Parser] 错误:', parsed.content || parsed.error);
                 onError(parsed.content || parsed.error || '未知错误');
+              } else {
+                // 未处理的类型
+                console.warn('⚠️ [SSE Parser] 未处理的消息类型:', parsed.type, parsed);
               }
             } catch (e) {
-              console.error('解析 SSE 数据失败:', e, '原始数据:', jsonStr);
+              console.error('❌ [SSE Parser] JSON 解析失败:', e);
+              console.error('原始数据:', jsonStr);
             }
           }
         });

@@ -18,6 +18,8 @@ import {
   addUserMessage,
   startStreaming,
   appendStreamingContent,
+  addToolCall,
+  updateToolResult,
   endStreaming,
   addToast,
   setMessages,
@@ -34,6 +36,7 @@ import {
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import { ThemeProvider } from '../components/shared/ThemeProvider';
 import { agentTheme } from '../styles/themes';
+import ToolCallCard from '../components/chat/ToolCallCard/ToolCallCard';
 
 // --- 组件：背景动态流体 ---
 // 使用纯CSS动画模拟流动的空气感背景
@@ -105,6 +108,7 @@ export default function Agent() {
             role: msg.role,
             content: msg.content || '',
             thinking: msg.thinking || '',
+            toolCalls: msg.toolCalls || [], // 保留工具调用信息
             timestamp: msg.timestamp || new Date().toISOString(),
             isStreaming: false,
             isThinking: false,
@@ -163,23 +167,35 @@ export default function Agent() {
       message,
       // onToolCall - 工具调用回调
       (toolCallData) => {
-        // 显示工具调用信息
-        const toolInfo = `\n\n🔧 ${toolCallData.content || '正在调用工具...'}\n`;
-        dispatch(appendStreamingContent(toolInfo));
+        console.log('🔧 [API] 收到工具调用:', {
+          type: toolCallData.type,
+          tool_name: toolCallData.tool_name,
+          has_tool_arguments: !!toolCallData.tool_arguments,
+          arguments_keys: toolCallData.tool_arguments ? Object.keys(toolCallData.tool_arguments) : []
+        });
+        console.log('🔧 [API] 工具调用完整数据:', toolCallData);
+        // 添加工具调用到消息中
+        dispatch(addToolCall(toolCallData));
       },
       // onToolResult - 工具结果回调
       (toolResultData) => {
-        // 显示工具结果
-        const resultInfo = `✅ ${toolResultData.content || '工具执行完成'}\n\n`;
-        dispatch(appendStreamingContent(resultInfo));
+        console.log('✅ [API] 收到工具结果:', {
+          type: toolResultData.type,
+          tool_name: toolResultData.tool_name,
+          content_length: toolResultData.content ? toolResultData.content.length : 0
+        });
+        console.log('✅ [API] 工具结果完整数据:', toolResultData);
+        // 更新工具调用结果
+        dispatch(updateToolResult(toolResultData));
       },
       // onChunk - 内容回调
       (content) => {
-        console.log('收到内容块:', content);
+        console.log('📝 [API] 收到内容块 (长度: ' + content.length + ')');
         dispatch(appendStreamingContent(content));
       },
       // onDone - 完成回调
       async () => {
+        console.log('🏁 [API] 流式响应完成');
         dispatch(endStreaming());
         if (isFirstMessage) {
           try {
@@ -200,6 +216,7 @@ export default function Agent() {
       },
       // onError - 错误回调
       (error) => {
+        console.error('❌ [API] 流式响应错误:', error);
         dispatch(endStreaming());
         dispatch(addToast({
           type: 'error',
@@ -345,6 +362,12 @@ export default function Agent() {
               ) : (
                 messages.map((msg, idx) => {
                   const msgKey = msg.id || `${msg.role}-${idx}-${msg.timestamp || Date.now()}`;
+                  
+                  // 调试日志：记录每条消息的工具调用信息
+                  if (msg.role === 'assistant' && msg.toolCalls && msg.toolCalls.length > 0) {
+                    console.log(`消息 ${idx} (${msgKey})有${msg.toolCalls.length}个工具调用:`, msg.toolCalls);
+                  }
+                  
                   return (
                     <div 
                       key={msgKey} 
@@ -375,6 +398,28 @@ export default function Agent() {
                             </div>
                           ) : (
                             <>
+                              {/* 工具调用列表 */}
+                              {msg.toolCalls && msg.toolCalls.length > 0 && (
+                                <div className="mb-4 space-y-2">
+                                  {msg.toolCalls.map((toolCall, toolIdx) => {
+                                    console.log(`渲染工具调用 ${toolIdx}:`, {
+                                      id: toolCall.id,
+                                      tool_name: toolCall.tool_name,
+                                      isExecuting: toolCall.isExecuting,
+                                      hasResult: !!toolCall.result
+                                    });
+                                    return (
+                                      <ToolCallCard
+                                        key={toolCall.id || toolIdx}
+                                        toolCall={toolCall}
+                                        toolResult={toolCall.result}
+                                        isExecuting={toolCall.isExecuting}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              
                               <MarkdownRenderer content={msg.content || ''} />
                               {msg.isStreaming && (
                                 <span className="inline-block w-2 h-4 ml-1 bg-teal-500 animate-pulse" />

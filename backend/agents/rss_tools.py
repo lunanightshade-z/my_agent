@@ -60,9 +60,11 @@ def tool_fetch_rss_news(
                     "successful_sources": result.successful_sources,
                     "failed_sources": result.failed_sources,
                     "total_articles": len(articles_list),
-                    "fetch_time": result.fetch_time
+                    "fetch_time": result.fetch_time,
+                    "status_message": f"已成功获取 {result.successful_sources}/{result.total_sources} 个RSS源，共 {len(articles_list)} 篇文章。部分源失败是正常的网络现象，当前结果已可用于分析。"
                 },
-                "articles": articles_list
+                "articles": articles_list,
+                "note": "这是最终获取结果，无需重复调用。部分RSS源失败是正常现象。"
             }
             
     except Exception as e:
@@ -160,7 +162,8 @@ def tool_filter_rss_news(
             "query": query,
             "total_articles": len(articles),
             "filtered_count": len(filtered_articles),
-            "filtered_articles": filtered_articles
+            "filtered_articles": filtered_articles,
+            "note": f"已从{len(articles)}篇文章中筛选出最相关的{len(filtered_articles)}篇，无需重复调用。"
         }
         
     except Exception as e:
@@ -231,7 +234,7 @@ def tool_search_rss_by_keywords(
 RSS_TOOLS_DEFINITIONS = [
     {
         "name": "fetch_rss_news",
-        "description": "获取最新的RSS新闻。支持从多个新闻源（如FT中文网、BBC中文、极客公园、少数派等）获取最新资讯。适用于用户询问最新新闻、今日资讯等场景。",
+        "description": "获取最新的RSS新闻。支持从多个新闻源获取最新资讯。注意：由于网络原因，部分RSS源可能失败，这是正常现象。只要成功获取部分文章即可使用，无需重复调用。",
         "parameters": {
             "type": "object",
             "properties": {
@@ -254,7 +257,7 @@ RSS_TOOLS_DEFINITIONS = [
     },
     {
         "name": "filter_rss_news",
-        "description": "根据用户的查询问题或关键词，智能筛选和排序RSS新闻，返回最相关的文章。适用于用户询问特定主题的新闻，如'AI相关的新闻'、'科技公司的最新动态'等。",
+        "description": "根据用户的查询问题或关键词，智能筛选和排序RSS新闻。该工具会先获取RSS，然后进行筛选，一次调用即可完成。如果返回结果较少，说明相关新闻确实不多，无需重复调用。",
         "parameters": {
             "type": "object",
             "properties": {

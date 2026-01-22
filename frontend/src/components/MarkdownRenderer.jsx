@@ -2,6 +2,8 @@
  * Markdown 内容渲染器 - 统一处理markdown样式
  * 特性:
  * - 支持代码高亮
+ * - 支持数学公式（KaTeX）
+ * - 支持 GitHub Flavored Markdown（任务列表、删除线等）
  * - 支持表格、列表、标题等格式
  * - 响应式设计，适配深色主题
  * - 可复制的代码块
@@ -9,15 +11,21 @@
 
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import remarkGfm from 'remark-gfm';
+import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, Check } from 'lucide-react';
+import 'katex/dist/katex.min.css';
 import './markdown-renderer.css';
 
 // 代码块组件 - 带复制功能
 const CodeBlock = ({ inline, className, children }) => {
   const [copied, setCopied] = React.useState(false);
-  const language = className?.replace(/language-/, '') || 'plaintext';
+  const classNameStr = className ? String(className) : '';
+  const match = /language-(\w+)/.exec(classNameStr);
+  const language = match ? match[1] : 'plaintext';
   const code = String(children).replace(/\n$/, '');
 
   const handleCopy = () => {
@@ -26,45 +34,47 @@ const CodeBlock = ({ inline, className, children }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (inline) {
+  // 只有明确是多行代码块且有语言标识才使用 SyntaxHighlighter
+  if (!inline && match) {
     return (
-      <code className="inline-code">
-        {children}
-      </code>
+      <div className="code-block-wrapper">
+        <div className="code-block-header">
+          <span className="code-language">{language}</span>
+          <button
+            onClick={handleCopy}
+            className="copy-button"
+            title={copied ? '已复制' : '复制代码'}
+          >
+            {copied ? (
+              <Check size={16} />
+            ) : (
+              <Copy size={16} />
+            )}
+          </button>
+        </div>
+        <SyntaxHighlighter
+          language={language}
+          style={oneDark}
+          customStyle={{
+            margin: 0,
+            padding: '1rem',
+            borderRadius: '0 0 8px 8px',
+            fontSize: '13px',
+            lineHeight: '1.6',
+          }}
+          wrapLongLines={true}
+        >
+          {code}
+        </SyntaxHighlighter>
+      </div>
     );
   }
 
+  // 其他情况都作为行内代码处理
   return (
-    <div className="code-block-wrapper">
-      <div className="code-block-header">
-        <span className="code-language">{language}</span>
-        <button
-          onClick={handleCopy}
-          className="copy-button"
-          title={copied ? '已复制' : '复制代码'}
-        >
-          {copied ? (
-            <Check size={16} />
-          ) : (
-            <Copy size={16} />
-          )}
-        </button>
-      </div>
-      <SyntaxHighlighter
-        language={language}
-        style={oneDark}
-        customStyle={{
-          margin: 0,
-          padding: '1rem',
-          borderRadius: '0 0 8px 8px',
-          fontSize: '13px',
-          lineHeight: '1.6',
-        }}
-        wrapLongLines={true}
-      >
-        {code}
-      </SyntaxHighlighter>
-    </div>
+    <code className="inline-code">
+      {children}
+    </code>
   );
 };
 
@@ -87,11 +97,28 @@ const HeadingComponent = ({ level, children }) => {
 };
 
 // 列表项组件
-const ListItemComponent = ({ children, ordered, index }) => (
-  <li className={`list-item ${ordered ? 'ordered-item' : 'unordered-item'}`}>
-    {children}
-  </li>
-);
+const ListItemComponent = ({ children, className, checked }) => {
+  // 处理任务列表
+  if (className && className.includes('task-list-item')) {
+    return (
+      <li className={`list-item task-list-item ${className}`}>
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled
+          className="task-checkbox"
+          readOnly
+        />
+        <span>{children}</span>
+      </li>
+    );
+  }
+  return (
+    <li className={`list-item ${className || ''}`}>
+      {children}
+    </li>
+  );
+};
 
 // 有序列表组件
 const OrderedListComponent = ({ children }) => (
@@ -158,6 +185,8 @@ export default function MarkdownRenderer({ content, className = '' }) {
   return (
     <div className={`markdown-message ${className}`}>
       <ReactMarkdown
+        remarkPlugins={[remarkMath, remarkGfm]}
+        rehypePlugins={[rehypeKatex]}
         components={{
           code: CodeBlock,
           a: LinkComponent,
@@ -185,10 +214,13 @@ export default function MarkdownRenderer({ content, className = '' }) {
           blockquote: BlockquoteComponent,
           hr: HorizontalRuleComponent,
           p: ParagraphComponent,
+          del: ({ children }) => <del className="markdown-del">{children}</del>,
+          s: ({ children }) => <s className="markdown-strikethrough">{children}</s>,
+          em: ({ children }) => <em>{children}</em>,
         }}
         allowedElements={[
           'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-          'p', 'br', 'strong', 'em', 'u', 'del',
+          'p', 'br', 'strong', 'em', 'u', 'del', 's',
           'code', 'pre',
           'ul', 'ol', 'li',
           'blockquote', 'hr',

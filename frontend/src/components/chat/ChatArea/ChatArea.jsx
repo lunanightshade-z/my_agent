@@ -256,4 +256,4 @@ const ChatArea = () => {
   );
 };
 
-export default ChatArea;
+export default React.memo(ChatArea);

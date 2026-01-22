@@ -205,6 +205,14 @@
   gap: var(--space-md);
 }
 
+/* 工具调用容器 */
+.toolCallsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
 /* 思考过程 */
 .thinking {
   padding: var(--space-md);
@@ -234,10 +242,71 @@
 .thinkingContent {
   font-size: var(--font-size-xs);
   color: rgba(255, 255, 255, 0.8);
-  font-family: var(--font-mono);
-  white-space: pre-wrap;
-  word-break: break-words;
   line-height: 1.75;
+  padding: 0.5rem 0;
+}
+
+/* Thinking 模块中的 Markdown 样式 */
+.thinkingMarkdown {
+  width: 100%;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.thinkingMarkdown p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.thinkingMarkdown h1,
+.thinkingMarkdown h2,
+.thinkingMarkdown h3,
+.thinkingMarkdown h4,
+.thinkingMarkdown h5,
+.thinkingMarkdown h6 {
+  margin: 0.75rem 0 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(212, 175, 55, 0.85);
+}
+
+.thinkingMarkdown ul,
+.thinkingMarkdown ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.thinkingMarkdown li {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.thinkingMarkdown code {
+  background: rgba(212, 175, 55, 0.15);
+  color: rgba(212, 175, 55, 0.9);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 0.85em;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.thinkingMarkdown strong,
+.thinkingMarkdown b {
+  color: rgba(212, 175, 55, 0.9);
+  font-weight: 600;
+}
+
+.thinkingMarkdown em {
+  color: rgba(212, 175, 55, 0.8);
+  font-style: italic;
+}
+
+.thinkingMarkdown del {
+  color: rgba(184, 184, 184, 0.6);
+  text-decoration: line-through;
 }
 
 .thinkingCursor {
@@ -300,6 +369,12 @@
   font-size: var(--font-size-sm);
 }
 
+.taskListItem {
+  display: flex;
+  align-items: flex-start;
+  list-style: none;
+}
+
 .link {
   color: var(--color-primary);
   text-decoration: underline;
@@ -311,7 +386,8 @@
 
 .strong,
 .bold {
-  color: #ffffff;
+  /* 深色背景下使用金色强调（符合赛博朋克主题） */
+  color: rgba(212, 175, 55, 0.95);
   font-weight: var(--font-weight-bold);
 }
 
@@ -430,4 +506,87 @@
   50% {
     opacity: 0.5;
   }
+}
+
+/* ============ 任务列表样式 ============ */
+.taskCheckbox {
+  margin-right: 0.5rem;
+  cursor: default;
+  accent-color: var(--color-primary);
+}
+
+/* ============ 删除线样式 ============ */
+.strikethrough {
+  text-decoration: line-through;
+  color: rgba(184, 184, 184, 0.7);
+}
+
+/* ============ 表格增强样式 ============ */
+.tableWrapper {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.9rem;
+}
+
+.table thead tr {
+  background: rgba(212, 175, 55, 0.15);
+  border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.table tbody tr {
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+  transition: background-color 0.2s ease-out;
+}
+
+.table tbody tr:hover {
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.table th,
+.table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: var(--color-text-primary);
+}
+
+.table th {
+  font-weight: 600;
+  color: rgba(212, 175, 55, 0.95);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+/* ============ 数学公式样式 ============ */
+.mathInline {
+  display: inline-block;
+  color: rgba(212, 175, 55, 0.9);
+  background: rgba(212, 175, 55, 0.1);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  margin: 0 0.2em;
+}
+
+.mathBlock {
+  display: block;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  overflow-x: auto;
+  text-align: center;
+}
+
+/* KaTeX 全局样式覆盖 */
+:global(.katex) {
+  color: rgba(212, 175, 55, 0.95);
 }

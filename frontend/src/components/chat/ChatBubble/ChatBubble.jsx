@@ -6,13 +6,119 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Copy, Check, RefreshCw, Edit2, X, Send, Brain, Zap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import remarkGfm from 'remark-gfm';
+import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import 'katex/dist/katex.min.css';
 import { cn } from '../../../styles/utils.js';
 import { useTheme } from '../../shared/ThemeProvider';
 import Button from '../../ui/Button.jsx';
 import { Textarea } from '../../ui/Input.jsx';
+import ToolCallCard from '../ToolCallCard/ToolCallCard';
 import styles from './ChatBubble.module.css';
+
+// Markdown 组件定义 - 提取为常量以在多个地方复用
+const markdownComponents = {
+  code({ node, inline, className, children, ...props }) {
+    const classNameStr = className ? String(className) : '';
+    const match = /language-(\w+)/.exec(classNameStr);
+    
+    // 只有明确是多行代码块才使用 SyntaxHighlighter
+    if (!inline && match) {
+      return (
+        <div className={styles.codeBlockWrapper}>
+          <SyntaxHighlighter
+            style={vscDarkPlus}
+            language={match[1]}
+            PreTag="div"
+            className={styles.codeBlock}
+            {...props}
+          >
+            {String(children).replace(/\n$/, '')}
+          </SyntaxHighlighter>
+          <button
+            onClick={() => navigator.clipboard.writeText(String(children).replace(/\n$/, ''))}
+            className={styles.codeCopyButton}
+          >
+            <Copy size={12} className={styles.codeCopyIcon} />
+            复制
+          </button>
+        </div>
+      );
+    }
+    
+    // 其他情况都作为行内代码处理
+    return (
+      <code className={styles.inlineCode} {...props}>
+        {children}
+      </code>
+    );
+  },
+  p: ({ children }) => (
+    <p className={styles.paragraph}>{children}</p>
+  ),
+  h1: ({ children }) => <h1 className={styles.heading1}>{children}</h1>,
+  h2: ({ children }) => <h2 className={styles.heading2}>{children}</h2>,
+  h3: ({ children }) => <h3 className={styles.heading3}>{children}</h3>,
+  ul: ({ children }) => (
+    <ul className={styles.unorderedList}>{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className={styles.orderedList}>{children}</ol>
+  ),
+  li: ({ children, className: liClassName, checked, ...liProps }) => {
+    // 处理任务列表
+    if (liClassName && liClassName.includes('task-list-item')) {
+      return (
+        <li className={`${styles.listItem} ${styles.taskListItem}`} {...liProps}>
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled
+            className={styles.taskCheckbox}
+            readOnly
+          />
+          <span>{children}</span>
+        </li>
+      );
+    }
+    return <li className={styles.listItem} {...liProps}>{children}</li>;
+  },
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      className={styles.link}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {children}
+    </a>
+  ),
+  strong: ({ children }) => (
+    <strong className={styles.strong}>{children}</strong>
+  ),
+  b: ({ children }) => (
+    <b className={styles.bold}>{children}</b>
+  ),
+  em: ({ children }) => (
+    <em>{children}</em>
+  ),
+  del: ({ children }) => (
+    <del className={styles.strikethrough}>{children}</del>
+  ),
+  table: ({ children }) => (
+    <div className={styles.tableWrapper}>
+      <table className={styles.table}>{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => <thead>{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr>{children}</tr>,
+  th: ({ children, ...props }) => <th {...props}>{children}</th>,
+  td: ({ children, ...props }) => <td {...props}>{children}</td>,
+};
 
 const ChatBubble = ({
   message,
@@ -144,7 +250,14 @@ const ChatBubble = ({
                     <span className={styles.thinkingLabel}>深度思考</span>
                   </div>
                   <div className={styles.thinkingContent}>
-                    {message.thinking}
+                    <ReactMarkdown
+                      className={styles.thinkingMarkdown}
+                      remarkPlugins={[remarkMath, remarkGfm]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={markdownComponents}
+                    >
+                      {message.thinking}
+                    </ReactMarkdown>
                     {isThinking && (
                       <motion.span
                         animate={{ opacity: [1, 0] }}
@@ -156,69 +269,30 @@ const ChatBubble = ({
                 </motion.div>
               )}
 
+              {/* 工具调用列表 */}
+              {message.toolCalls && message.toolCalls.length > 0 && (
+                <div className={styles.toolCallsContainer}>
+                  {message.toolCalls.map((toolCall, index) => {
+                    console.log('渲染工具调用:', toolCall);
+                    return (
+                      <ToolCallCard
+                        key={toolCall.id || index}
+                        toolCall={toolCall}
+                        toolResult={toolCall.result}
+                        isExecuting={toolCall.isExecuting}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
               {/* 回答内容 */}
               {message.content && (
                 <ReactMarkdown
                   className={styles.markdown}
-                  components={{
-                    code({ node, inline, className, children, ...props }) {
-                      const classNameStr = className ? String(className) : '';
-                      const match = /language-(\w+)/.exec(classNameStr);
-                      return !inline && match ? (
-                        <div className={styles.codeBlockWrapper}>
-                          <SyntaxHighlighter
-                            style={vscDarkPlus}
-                            language={match[1]}
-                            PreTag="div"
-                            className={styles.codeBlock}
-                            {...props}
-                          >
-                            {String(children).replace(/\n$/, '')}
-                          </SyntaxHighlighter>
-                          <button
-                            onClick={() => navigator.clipboard.writeText(String(children).replace(/\n$/, ''))}
-                            className={styles.codeCopyButton}
-                          >
-                            <Copy size={12} className={styles.codeCopyIcon} />
-                            复制
-                          </button>
-                        </div>
-                      ) : (
-                        <code className={styles.inlineCode} {...props}>
-                          {children}
-                        </code>
-                      );
-                    },
-                    p: ({ children }) => (
-                      <p className={styles.paragraph}>{children}</p>
-                    ),
-                    h1: ({ children }) => <h1 className={styles.heading1}>{children}</h1>,
-                    h2: ({ children }) => <h2 className={styles.heading2}>{children}</h2>,
-                    h3: ({ children }) => <h3 className={styles.heading3}>{children}</h3>,
-                    ul: ({ children }) => (
-                      <ul className={styles.unorderedList}>{children}</ul>
-                    ),
-                    ol: ({ children }) => (
-                      <ol className={styles.orderedList}>{children}</ol>
-                    ),
-                    li: ({ children }) => <li className={styles.listItem}>{children}</li>,
-                    a: ({ children, href }) => (
-                      <a
-                        href={href}
-                        className={styles.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {children}
-                      </a>
-                    ),
-                    strong: ({ children }) => (
-                      <strong className={styles.strong}>{children}</strong>
-                    ),
-                    b: ({ children }) => (
-                      <b className={styles.bold}>{children}</b>
-                    ),
-                  }}
+                  remarkPlugins={[remarkMath, remarkGfm]}
+                  rehypePlugins={[rehypeKatex]}
+                  components={markdownComponents}
                 >
                   {message.content}
                 </ReactMarkdown>

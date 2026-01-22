@@ -53,22 +53,25 @@
 
 .heading-h3 {
   font-size: 1.3rem;
-  color: #000000;
+  color: #334155;
+  font-weight: 700;
 }
 
 .heading-h4 {
   font-size: 1.1rem;
-  color: #000000;
+  color: #334155;
+  font-weight: 700;
 }
 
 .heading-h5 {
   font-size: 1rem;
-  color: #000000;
+  color: #334155;
+  font-weight: 700;
 }
 
 .heading-h6 {
   font-size: 0.95rem;
-  color: #000000;
+  color: #334155;
   font-weight: 600;
 }
 
@@ -308,7 +311,7 @@
 strong,
 b {
   font-weight: 700;
-  color: #000000;
+  color: #0d9488;
 }
 
 em,
@@ -412,4 +415,69 @@ u {
     text-decoration: underline;
     color: #0066cc;
   }
+}
+
+/* ============ 任务列表样式 ============ */
+.task-list-item {
+  margin: 0.5rem 0;
+  padding: 0.25rem 0;
+  display: flex;
+  align-items: flex-start;
+  list-style: none;
+}
+
+.task-checkbox {
+  margin: 0 0.5rem 0 0;
+  margin-top: 0.2em;
+  cursor: default;
+  accent-color: rgba(0, 255, 255, 0.8);
+}
+
+/* ============ 删除线样式 ============ */
+del,
+s {
+  text-decoration: line-through;
+  color: rgba(226, 232, 240, 0.65);
+}
+
+/* ============ 数学公式样式 ============ */
+.math-inline,
+:global(.math-inline) {
+  display: inline-block;
+  color: rgba(0, 255, 255, 0.9);
+  background: rgba(0, 255, 255, 0.1);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  margin: 0 0.2em;
+}
+
+.math-display,
+:global(.math-display) {
+  display: block;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 8px;
+  overflow-x: auto;
+  text-align: center;
+}
+
+/* KaTeX 全局样式 */
+:global(.katex) {
+  font-size: 1.1em;
+  color: inherit;
+}
+
+:global(.katex-display) {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+:global(.katex-display > .katex) {
+  text-align: center;
 }

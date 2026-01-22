@@ -4,8 +4,10 @@
 
 
 # docker 
+
 docker compose up -d --build 
 
+## 查看日志
 docker logs -f ai_agent_api --tail 100
 
 

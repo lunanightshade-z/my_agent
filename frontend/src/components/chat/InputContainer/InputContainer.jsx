@@ -216,4 +216,4 @@ const InputContainer = ({ onSend, disabled = false }) => {
   );
 };
 
-export default InputContainer;
+export default React.memo(InputContainer);

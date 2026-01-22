@@ -2,7 +2,7 @@
  * Input / Textarea 原子组件
  * 支持多种状态、尺寸、类型
  */
-import React, { InputHTMLAttributes, TextareaHTMLAttributes, forwardRef, useRef, useEffect } from 'react';
+import React, { InputHTMLAttributes, TextareaHTMLAttributes, forwardRef, useLayoutEffect, useRef } from 'react';
 import { cn } from '../../styles/utils.js';
 
 
@@ -80,12 +80,14 @@ const Textarea = forwardRef(
       errorMessage,
       className,
       onChange,
+      value,
       ...props
     },
     ref
   ) => {
     const textareaRef = useRef(null);
     const internalRef = ref || textareaRef;
+    const resizeRafRef = useRef(null);
 
     const sizeStyles = {
       sm: 'px-3 py-2 text-sm',
@@ -94,15 +96,39 @@ const Textarea = forwardRef(
     };
 
     // 自动扩展高度
-    const handleInput = (e) => {
-      if (autoExpand && internalRef && typeof internalRef !== 'function') {
-        const textarea = internalRef.current;
-        if (textarea) {
-          textarea.style.height = 'auto';
-          textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
-        }
+    const resizeTextarea = () => {
+      if (!autoExpand || !internalRef || typeof internalRef === 'function') return;
+      const textarea = internalRef.current;
+      if (!textarea) return;
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    };
+
+    useLayoutEffect(() => {
+      if (!autoExpand) return;
+      if (resizeRafRef.current) {
+        cancelAnimationFrame(resizeRafRef.current);
       }
+      resizeRafRef.current = requestAnimationFrame(() => {
+        resizeTextarea();
+      });
+      return () => {
+        if (resizeRafRef.current) {
+          cancelAnimationFrame(resizeRafRef.current);
+        }
+      };
+    }, [autoExpand, value]);
+
+    const handleInput = (e) => {
       onChange?.(e);
+      if (value === undefined) {
+        if (resizeRafRef.current) {
+          cancelAnimationFrame(resizeRafRef.current);
+        }
+        resizeRafRef.current = requestAnimationFrame(() => {
+          resizeTextarea();
+        });
+      }
     };
 
     const baseStyle = cn(
@@ -127,6 +153,7 @@ const Textarea = forwardRef(
           ref={internalRef}
           className={baseStyle}
           onChange={handleInput}
+          value={value}
           rows={3}
           {...props}
         />

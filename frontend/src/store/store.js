@@ -76,6 +76,7 @@ const chatSlice = createSlice({
         role: 'assistant',
         content: '',
         thinking: '',
+        toolCalls: [], // 工具调用列表
         timestamp: new Date().toISOString(),
         isStreaming: true,
         isThinking: false,
@@ -94,6 +95,91 @@ const chatSlice = createSlice({
       }
     },
     
+    // 添加工具调用
+    addToolCall: (state, action) => {
+      console.log('addToolCall action:', action.payload);
+      const lastMessage = state.messages[state.messages.length - 1];
+      console.log('最后一条消息:', lastMessage);
+      if (lastMessage && lastMessage.isStreaming) {
+        if (!lastMessage.toolCalls) {
+          lastMessage.toolCalls = [];
+        }
+        
+        // 确保工具调用对象包含所有必需字段
+        const toolCall = {
+          id: Date.now() + Math.random(), // 生成唯一ID
+          tool_name: action.payload.tool_name || action.payload.name || 'unknown', // 支持多种字段名
+          tool_arguments: action.payload.tool_arguments || action.payload.arguments || {}, // 支持多种字段名
+          isExecuting: true,
+          content: action.payload.content || '', // 保留原始内容
+          ...action.payload, // 保留其他字段
+        };
+        
+        console.log('添加工具调用:', toolCall);
+        lastMessage.toolCalls.push(toolCall);
+        console.log('工具调用列表:', lastMessage.toolCalls);
+      } else {
+        console.warn('无法添加工具调用: 最后一条消息不存在或不在流式状态', {
+          hasLastMessage: !!lastMessage,
+          isStreaming: lastMessage?.isStreaming,
+          payload: action.payload
+        });
+      }
+    },
+
+    // 更新工具调用结果
+    updateToolResult: (state, action) => {
+      console.log('updateToolResult action:', action.payload);
+      const lastMessage = state.messages[state.messages.length - 1];
+      if (lastMessage && lastMessage.toolCalls && lastMessage.toolCalls.length > 0) {
+        const toolName = action.payload.tool_name;
+        
+        // 找到匹配的工具调用（优先查找正在执行的，然后查找最后一个）
+        let toolCallIndex = -1;
+        
+        // 先尝试找到正在执行的同名工具调用
+        for (let i = lastMessage.toolCalls.length - 1; i >= 0; i--) {
+          if (lastMessage.toolCalls[i].tool_name === toolName && lastMessage.toolCalls[i].isExecuting) {
+            toolCallIndex = i;
+            break;
+          }
+        }
+        
+        // 如果没有找到正在执行的，找最后一个同名的
+        if (toolCallIndex === -1) {
+          for (let i = lastMessage.toolCalls.length - 1; i >= 0; i--) {
+            if (lastMessage.toolCalls[i].tool_name === toolName) {
+              toolCallIndex = i;
+              break;
+            }
+          }
+        }
+        
+        console.log('找到工具调用索引:', toolCallIndex, '工具名称:', toolName);
+        if (toolCallIndex >= 0) {
+          lastMessage.toolCalls[toolCallIndex].isExecuting = false;
+          lastMessage.toolCalls[toolCallIndex].result = action.payload;
+          lastMessage.toolCalls[toolCallIndex].content = action.payload.content || '';
+          console.log('工具调用结果已更新:', lastMessage.toolCalls[toolCallIndex]);
+        } else {
+          console.warn('未找到匹配的工具调用:', {
+            toolName,
+            toolCalls: lastMessage.toolCalls.map(tc => ({
+              name: tc.tool_name,
+              isExecuting: tc.isExecuting
+            }))
+          });
+        }
+      } else {
+        console.warn('无法更新工具调用结果: 最后一条消息不存在或没有工具调用', {
+          hasLastMessage: !!lastMessage,
+          hasToolCalls: !!lastMessage?.toolCalls,
+          toolCallsLength: lastMessage?.toolCalls?.length || 0,
+          payload: action.payload
+        });
+      }
+    },
+
     // 追加流式内容（回答内容）
     appendStreamingContent: (state, action) => {
       state.streamingContent += action.payload;
@@ -206,6 +292,8 @@ export const {
   startStreaming,
   appendStreamingThinking,
   appendStreamingContent,
+  addToolCall,
+  updateToolResult,
   endStreaming,
   toggleThinking,
   setThinking,

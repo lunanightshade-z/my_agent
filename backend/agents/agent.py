@@ -20,7 +20,13 @@ class AgentConfig:
     model: str = "qwen3-235b-instruct"
     api_key: str = ""
     base_url: str = ""
-    system_prompt: str = "你是一个智能助手，可以帮助用户回答问题并使用工具完成任务。"
+    system_prompt: str = """你是一个智能助手，可以帮助用户回答问题并使用工具完成任务。
+
+重要原则：
+1. 工具调用结果说明：当你调用RSS获取工具时，由于网络原因部分RSS源可能失败，这是正常现象。只要成功获取了部分文章（如6/11个源成功），就应该基于这些结果进行分析和回答，而不是重复调用。
+2. 避免重复调用：如果一个工具调用已经返回了有效结果（即使不是全部源都成功），不要使用相同或相似的参数再次调用。
+3. 结果利用：充分利用已获取的信息进行分析，即使数据不完整，也要尽力给出有价值的回答。
+4. 单次调用原则：对于RSS工具，通常一次调用就能获取足够的信息，无需重复调用相同参数。"""
     max_tool_iterations: int = 5  # 最大工具调用迭代次数
     temperature: float = 0.7
 
@@ -99,6 +105,30 @@ class Agent:
         
         # 当前迭代次数
         iteration = 0
+        
+        # 添加工具调用历史追踪
+        tool_call_history: List[Dict[str, Any]] = []
+        
+        def is_similar_call(tool_name: str, arguments: Dict[str, Any]) -> bool:
+            """检查是否是相似的工具调用"""
+            for past_call in tool_call_history:
+                if past_call["name"] == tool_name:
+                    # 检查参数相似度
+                    if tool_name in ["fetch_rss_news", "filter_rss_news"]:
+                        # 对于RSS工具，如果主要参数相同则认为相似
+                        past_args = past_call["arguments"]
+                        if tool_name == "filter_rss_news":
+                            # query参数相同视为重复
+                            if arguments.get("query") == past_args.get("query"):
+                                return True
+                        elif tool_name == "fetch_rss_news":
+                            # 参数基本相同视为重复
+                            return True
+            return False
+        
+        def count_tool_calls(tool_name: str) -> int:
+            """统计某个工具的调用次数"""
+            return sum(1 for call in tool_call_history if call["name"] == tool_name)
         
         while iteration < self.config.max_tool_iterations:
             iteration += 1
@@ -196,6 +226,33 @@ class Agent:
                             logger.error(f"工具参数解析失败: {e}")
                             tool_arguments = {}
                         
+                        # 检查是否是重复调用
+                        if is_similar_call(tool_name, tool_arguments):
+                            call_count = count_tool_calls(tool_name)
+                            if call_count >= 2:  # 最多允许2次相似调用
+                                warning_msg = f"工具 {tool_name} 已调用{call_count}次且参数相似，跳过此次调用。请基于已有结果进行分析。"
+                                logger.warning(warning_msg)
+                                
+                                tool_results.append({
+                                    "tool_call_id": tool_call['id'],
+                                    "role": "tool",
+                                    "name": tool_name,
+                                    "content": warning_msg
+                                })
+                                
+                                yield {
+                                    "type": "tool_result",
+                                    "tool_name": tool_name,
+                                    "content": f"⚠️ {warning_msg}\n"
+                                }
+                                continue
+                        
+                        # 记录工具调用
+                        tool_call_history.append({
+                            "name": tool_name,
+                            "arguments": tool_arguments
+                        })
+                        
                         # 通知用户工具调用
                         yield {
                             "type": "tool_call",
@@ -225,7 +282,7 @@ class Agent:
                             yield {
                                 "type": "tool_result",
                                 "tool_name": tool_name,
-                                "content": f"✅ 工具执行成功\n",
+                                "content": result_str,  # 包含完整的工具执行结果
                                 "metadata": {
                                     "result_preview": result_str[:200] + "..." if len(result_str) > 200 else result_str
                                 }
@@ -245,7 +302,10 @@ class Agent:
                             yield {
                                 "type": "tool_result",
                                 "tool_name": tool_name,
-                                "content": f"❌ {error_msg}\n"
+                                "content": error_msg,  # 包含完整的错误信息
+                                "metadata": {
+                                    "error": True
+                                }
                             }
                     
                     # 将工具结果添加到消息历史

@@ -5,6 +5,7 @@
 import os
 import sys
 from pathlib import Path
+from textwrap import dedent
 from typing import AsyncGenerator, Dict, Generator, List, Any
 
 from sqlalchemy.orm import Session
@@ -18,19 +19,40 @@ from app.infrastructure.logging.setup import get_logger
 
 # ==================== 配置常量 ====================
 # Agent模型配置
-AGENT_MODEL_NAME = "qwen3-235b-instruct"
+AGENT_MODEL_NAME = "qwen3-235b-instruct"  # 默认模型（用于通义千问）
 AGENT_MAX_TOOL_ITERATIONS = 5
 AGENT_TEMPERATURE = 0.7
 
+# 智谱AI模型配置（当base_url指向智谱AI时使用）
+ZHIPU_MODEL_NAME = "glm-4-flash"  # 智谱AI支持的模型
+
 # Agent系统提示词
-AGENT_SYSTEM_PROMPT = """你是一个智能新闻助手，可以帮助用户获取和分析最新的RSS新闻。
+AGENT_SYSTEM_PROMPT = dedent("""
+    你是一个智能新闻助手，可以帮助用户获取和分析最新的RSS新闻。
 
-你有以下能力：
-1. 获取最新的RSS新闻（来自FT中文网、BBC中文、极客公园、少数派等多个优质新闻源）
-2. 根据用户的问题智能筛选相关新闻
-3. 根据关键词搜索新闻
+    你有以下能力：
+    1. 获取最新的RSS新闻（来自FT中文网、BBC中文、极客公园、少数派等多个优质新闻源）
+    2. 根据用户的问题智能筛选相关新闻
+    3. 根据关键词搜索新闻
 
-当用户询问新闻或资讯时，请合理使用这些工具。回答要简洁明了，结构化展示。"""
+    重要原则：
+    1. 工具调用结果说明：当你调用RSS获取工具时，由于网络原因部分RSS源可能失败，这是正常现象。只要成功获取了部分文章（如6/11个源成功），就应该基于这些结果进行分析和回答，而不是重复调用。
+    2. 避免重复调用：如果一个工具调用已经返回了有效结果（即使不是全部源都成功），不要使用相同或相似的参数再次调用。
+    3. 结果利用：充分利用已获取的信息进行分析，即使数据不完整，也要尽力给出有价值的回答。
+    4. 单次调用原则：对于RSS工具，通常一次调用就能获取足够的信息，无需重复调用相同参数。
+
+    当用户询问新闻或资讯时，请合理使用这些工具。回答要简洁明了，结构化展示。
+
+    # 你的输出
+    你在最终根据搜索结果进行输出时，需要用markdown链接形式，将所有搜索结果链接起来，并添加标题和描述。
+    ### 示例
+    1. [标题1](链接1)：描述1
+    2. [标题2](链接2)：描述2
+    3. [标题3](链接3)：描述3
+    ...
+
+    """
+).strip()
 
 # 环境变量配置键
 ENV_QWEN_API_KEY = "QWEN_API_KEY"
@@ -60,6 +82,29 @@ except ImportError as e:
         raise ImportError(f"无法导入agents模块: {e}\n路径: {backend_path}")
 
 logger = get_logger(__name__)
+
+
+def _detect_model_from_base_url(base_url: str) -> str:
+    """
+    根据base_url自动检测应该使用的模型名称
+    
+    Args:
+        base_url: API基础URL
+        
+    Returns:
+        模型名称
+    """
+    if not base_url:
+        return AGENT_MODEL_NAME
+    
+    # 如果base_url包含智谱AI的域名，使用智谱AI的模型
+    if "bigmodel.cn" in base_url.lower() or "zhipuai" in base_url.lower():
+        logger.info(f"检测到智谱AI API，使用模型: {ZHIPU_MODEL_NAME}")
+        return ZHIPU_MODEL_NAME
+    
+    # 默认使用通义千问模型
+    logger.info(f"使用默认模型: {AGENT_MODEL_NAME}")
+    return AGENT_MODEL_NAME
 
 
 class AgentService:
@@ -97,9 +142,12 @@ class AgentService:
                 f"{ENV_QWEN_API_KEY} 或 {ENV_QWEN_API_BASE_URL} 未配置"
             )
         
+        # 根据base_url自动检测应该使用的模型
+        model_name = _detect_model_from_base_url(base_url)
+        
         # 创建智能体配置
         config = AgentConfig(
-            model=AGENT_MODEL_NAME,
+            model=model_name,
             api_key=api_key,
             base_url=base_url,
             system_prompt=AGENT_SYSTEM_PROMPT,
@@ -115,7 +163,8 @@ class AgentService:
         
         logger.info(
             "智能体已初始化",
-            model=AGENT_MODEL_NAME,
+            model=model_name,
+            base_url=base_url,
             tools_count=len(RSS_TOOLS_DEFINITIONS)
         )
         
@@ -269,10 +318,15 @@ class AgentService:
             
             elif chunk_type == "tool_result":
                 tool_name = chunk.get("tool_name", "unknown")
+                # 获取工具执行的实际结果内容
+                result_content = chunk.get("content", "")
+                metadata = chunk.get("metadata", {})
+                
                 yield {
                     "type": "tool_result",
-                    "content": f"工具 {tool_name} 执行完成",
-                    "tool_name": tool_name
+                    "content": result_content or f"工具 {tool_name} 执行完成",
+                    "tool_name": tool_name,
+                    "metadata": metadata
                 }
             
             elif chunk_type == "done":

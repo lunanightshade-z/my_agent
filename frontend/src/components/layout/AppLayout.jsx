@@ -44,49 +44,11 @@ const AppLayout = ({ children }) => {
   const { thinkingEnabled, currentConversationId, messages, isStreaming } = useSelector(
     (state) => state.chat
   );
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [activeArtifact] = useState(null);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isArtifactOpen, setArtifactOpen] = useState(true);
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
-
-  // 视差鼠标跟踪（带防抖和优化）- 必须在条件返回之前定义
-  useEffect(() => {
-    if (!isChatPage) return; // 非Chat页面不需要此效果
-    
-    let throttleTimer;
-    let lastX = 0;
-    let lastY = 0;
-
-    const handleMouseMove = (e) => {
-      if (!containerRef.current) return;
-      if (throttleTimer) return;
-
-      throttleTimer = setTimeout(() => {
-        const { innerWidth, innerHeight } = window;
-        const x = (e.clientX - innerWidth / 2) / innerWidth;
-        const y = (e.clientY - innerHeight / 2) / innerHeight;
-
-        const dx = Math.abs(x - lastX);
-        const dy = Math.abs(y - lastY);
-
-        if (dx > 0.01 || dy > 0.01) {
-          lastX = x;
-          lastY = y;
-          setMousePos({ x, y });
-        }
-
-        throttleTimer = null;
-      }, 16);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      if (throttleTimer) clearTimeout(throttleTimer);
-    };
-  }, [isChatPage]);
 
   // Dream Engine - 背景粒子动画（参考样式）
   useEffect(() => {
@@ -181,12 +143,6 @@ const AppLayout = ({ children }) => {
       </div>
     );
   }
-
-  const tiltStyle = {
-    transform: `perspective(1000px) rotateY(${mousePos.x * 0.5}deg) rotateX(${mousePos.y * -0.5}deg)`,
-    willChange: 'transform',
-    transition: 'transform 0.1s ease-out',
-  };
 
   // 发送消息（让 InputContainer 真正触发 API 请求）
   const handleSendMessage = async (message) => {
