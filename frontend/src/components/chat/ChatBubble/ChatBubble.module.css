@@ -1,0 +1,433 @@
+/**
+ * Chat 页面聊天气泡样式 - CSS Modules
+ * 使用主题变量，完全隔离样式
+ */
+
+/* 容器 */
+.container {
+  display: flex;
+  width: 100%;
+  margin-bottom: var(--space-xl);
+}
+
+.containerUser {
+  justify-content: flex-end;
+}
+
+.containerAssistant {
+  justify-content: flex-start;
+}
+
+/* Hover 包装器：包含消息和按钮区域 */
+.hoverWrapper {
+  position: relative;
+  display: flex;
+  width: 100%;
+  /* 扩展 hover 区域以包含绝对定位的按钮 */
+  padding-left: 64px;
+  padding-right: 64px;
+  margin-left: -64px;
+  margin-right: -64px;
+  /* 确保按钮区域也在 hover 范围内 */
+  min-height: 100%;
+}
+
+/* 用户消息的 hover 包装器：右对齐，不占据 100% 宽度 */
+.hoverWrapperUser {
+  width: auto;
+  /* 移除左侧的 padding 和 margin，因为按钮在右侧 */
+  padding-left: 0;
+  margin-left: 0;
+  /* 确保右对齐 */
+  margin-left: auto;
+  /* 扩展 hover 区域以包含右侧按钮 */
+  padding-right: 64px;
+  margin-right: -64px;
+  /* 确保内容可以自然扩展，不受 flex 容器限制 */
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* 消息包装器 */
+.messageWrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  position: relative;
+  flex: 0 1 auto;
+}
+
+.messageWrapperUser {
+  align-items: flex-end;
+}
+
+/* 提高优先级，确保覆盖基础 max-width 限制 */
+.messageWrapper.messageWrapperUser {
+  width: fit-content;
+  /* 用户消息使用更大的最大宽度，避免过早换行 */
+  max-width: min(100%, 1600px);
+}
+
+/* 消息头 */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  font-size: 10px;
+  font-family: 'Rajdhani', sans-serif;
+  opacity: 0.5;
+}
+
+.headerUser {
+  flex-direction: row-reverse;
+}
+
+.headerAssistant {
+  flex-direction: row;
+}
+
+.roleLabel {
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.roleLabelUser {
+  color: rgba(217, 119, 6, 0.8);
+}
+
+.roleLabelAssistant {
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.timestamp {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+/* 消息气泡 */
+.bubble {
+  position: relative;
+  padding: var(--space-lg);
+  border-radius: 0;
+  backdrop-filter: blur(8px);
+  transition: all var(--duration-base) ease;
+  border: none;
+}
+
+.bubble:hover {
+  backdrop-filter: blur(12px);
+}
+
+.bubbleUser {
+  background: linear-gradient(to bottom right, rgba(217, 119, 6, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
+  border-right: 2px solid rgba(217, 119, 6, 0.5);
+  border-top-left-radius: 1rem;
+  border-bottom-left-radius: 1rem;
+}
+
+.bubbleAssistant {
+  background: linear-gradient(to bottom right, rgba(51, 65, 85, 0.3) 0%, rgba(0, 0, 0, 0.4) 100%);
+  border-left: 2px solid rgba(148, 163, 184, 0.3);
+  border-top-right-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+}
+
+/* 装饰角 */
+.corner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid;
+}
+
+.cornerTop {
+  top: 0;
+}
+
+.cornerTopRight {
+  right: 0;
+  border-color: rgba(217, 119, 6, 0.5);
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+
+.cornerTopLeft {
+  left: 0;
+  border-color: rgba(148, 163, 184, 0.3);
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.cornerBottom {
+  bottom: 0;
+}
+
+.cornerBottomRight {
+  right: 0;
+  border-color: rgba(217, 119, 6, 0.5);
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+.cornerBottomLeft {
+  left: 0;
+  border-color: rgba(148, 163, 184, 0.3);
+  border-bottom: 1px solid;
+  border-left: 1px solid;
+}
+
+/* 用户消息内容 */
+.userContent {
+  color: rgba(251, 191, 36, 0.9);
+  line-height: 1.75;
+  font-weight: 300;
+  font-size: 1rem;
+  white-space: pre-wrap;
+  /* 使用 break-word 而不是 break-words，只在必要时换行 */
+  word-break: break-word;
+  /* 允许长单词在必要时换行，但优先保持单词完整 */
+  overflow-wrap: break-word;
+}
+
+/* AI 消息内容 */
+.aiContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* 思考过程 */
+.thinking {
+  padding: var(--space-md);
+  border-radius: var(--radius-xl);
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.thinkingHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.thinkingIcon {
+  color: var(--color-secondary);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.thinkingLabel {
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  color: var(--color-secondary);
+}
+
+.thinkingContent {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-words;
+  line-height: 1.75;
+}
+
+.thinkingCursor {
+  display: inline-block;
+  width: 4px;
+  height: 12px;
+  background: var(--color-primary);
+  margin-left: 4px;
+  border-radius: 2px;
+}
+
+/* Markdown 样式 */
+.markdown {
+  color: rgba(226, 232, 240, 1);
+}
+
+.paragraph {
+  color: var(--color-text-primary);
+  line-height: 1.75;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.heading1 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-sm);
+  color: var(--color-text-primary);
+}
+
+.heading2 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-sm);
+  color: var(--color-text-primary);
+}
+
+.heading3 {
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-primary);
+}
+
+.unorderedList,
+.orderedList {
+  list-style-position: inside;
+  padding-left: var(--space-lg);
+  margin-bottom: var(--space-sm);
+  color: var(--color-text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.listItem {
+  font-size: var(--font-size-sm);
+}
+
+.link {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.link:hover {
+  color: var(--color-secondary);
+}
+
+.strong,
+.bold {
+  color: #ffffff;
+  font-weight: var(--font-weight-bold);
+}
+
+/* 代码样式 */
+.inlineCode {
+  background: rgba(212, 175, 55, 0.2);
+  color: var(--color-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: var(--font-mono);
+}
+
+.codeBlockWrapper {
+  position: relative;
+  margin: var(--space-sm) 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.codeBlockWrapper:hover .codeCopyButton {
+  opacity: 1;
+}
+
+.codeBlock {
+  border-radius: var(--radius-lg);
+  margin: 0;
+}
+
+.codeCopyButton {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  opacity: 0;
+  padding: 4px 8px;
+  font-size: var(--font-size-xs);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all var(--duration-fast) ease;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+.codeCopyButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.codeCopyIcon {
+  display: inline;
+  margin-right: 4px;
+}
+
+/* 流式光标 */
+.streamingCursor {
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: var(--color-primary);
+  margin-left: 4px;
+  border-radius: 2px;
+}
+
+/* 编辑容器 */
+.editContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.editActions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+/* 操作按钮 */
+.actionButtonsLeft {
+  position: absolute;
+  left: -64px;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* 确保按钮区域可交互 */
+  z-index: 10;
+}
+
+.actionButtonsRight {
+  position: absolute;
+  right: -64px;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* 确保按钮区域可交互 */
+  z-index: 10;
+}
+
+.actionButton {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.actionButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.actionButtonIconSuccess {
+  color: var(--color-success);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

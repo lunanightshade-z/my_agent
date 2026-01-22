@@ -1,16 +1,17 @@
 /**
- * 输入框容器组件 - 赛博朋克风格
+ * Chat 页面输入框容器组件 - 使用 CSS Modules 和主题系统
  * 支持Thinking模式切换、快捷指令、输入历史
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Send, Sparkles, Paperclip } from 'lucide-react';
+import { Send, Sparkles, Paperclip, Box } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../../styles/utils.js';
-import { toggleThinking, addToInputHistory } from '../../store/store';
-import { Textarea } from '../ui/Input.jsx';
-import Button from '../ui/Button.jsx';
-
+import { cn } from '../../../styles/utils.js';
+import { useTheme } from '../../shared/ThemeProvider';
+import { toggleThinking, addToInputHistory } from '../../../store/store';
+import { Textarea } from '../../ui/Input.jsx';
+import Button from '../../ui/Button.jsx';
+import styles from './InputContainer.module.css';
 
 const SLASH_COMMANDS = [
   { cmd: '/summarize', desc: '总结内容', icon: '📝' },
@@ -21,8 +22,9 @@ const SLASH_COMMANDS = [
   { cmd: '/continue', desc: '请继续', icon: '➡️' },
 ];
 
-const InputContainer= ({ onSend, disabled = false }) => {
+const InputContainer = ({ onSend, disabled = false }) => {
   const dispatch = useDispatch();
+  const theme = useTheme();
   const { thinkingEnabled, inputHistory } = useSelector(state => state.chat);
   const [inputValue, setInputValue] = useState('');
   const [showCommands, setShowCommands] = useState(false);
@@ -106,7 +108,7 @@ const InputContainer= ({ onSend, disabled = false }) => {
   };
 
   return (
-    <div className="w-full bg-transparent space-y-3 relative z-10">
+    <div className={styles.container}>
       {/* 指令菜单 */}
       <AnimatePresence>
         {showCommands && filteredCommands.length > 0 && (
@@ -114,24 +116,22 @@ const InputContainer= ({ onSend, disabled = false }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute bottom-32 left-0 right-0 backdrop-blur-xl bg-white/8 border border-elite-gold/30 rounded-xl overflow-hidden shadow-xl"
+            className={styles.commandMenu}
           >
-            <div className="p-2 space-y-1 max-h-60 overflow-y-auto">
+            <div className={styles.commandMenuContent}>
               {filteredCommands.map((cmd, idx) => (
                 <button
                   key={cmd.cmd}
                   onClick={() => handleSelectCommand(cmd)}
                   className={cn(
-                    'w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left transition-all',
-                    idx === selectedCommandIndex
-                      ? 'bg-elite-gold/20 border border-elite-gold/50 text-elite-champagne'
-                      : 'text-gray-400 hover:bg-white/5 hover:text-gray-300'
+                    styles.commandItem,
+                    idx === selectedCommandIndex && styles.commandItemActive
                   )}
                 >
                   <span>{cmd.icon}</span>
-                  <div className="flex-1">
-                    <div className="text-sm font-mono">{cmd.cmd}</div>
-                    <div className="text-xs text-gray-500">{cmd.desc}</div>
+                  <div className={styles.commandItemContent}>
+                    <div className={styles.commandItemName}>{cmd.cmd}</div>
+                    <div className={styles.commandItemDesc}>{cmd.desc}</div>
                   </div>
                 </button>
               ))}
@@ -141,87 +141,75 @@ const InputContainer= ({ onSend, disabled = false }) => {
       </AnimatePresence>
 
       {/* 输入框容器 */}
-      <div className="w-full group transition-all">
-        <div
-          className="w-full rounded-2xl p-4 flex flex-col gap-3 relative"
-          style={{
-            background: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(212, 175, 55, 0.25)',
-            boxShadow:
-              thinkingEnabled && !disabled
-                ? '0 0 20px rgba(212, 175, 55, 0.15)'
-                : '0 0 20px rgba(212, 175, 55, 0.1)',
-            transition: 'all 0.3s ease-out',
-          }}
-        >
+      <div className={styles.inputWrapper}>
+        <div className={cn(styles.inputContainer, thinkingEnabled && !disabled && styles.inputContainerActive)}>
           {/* 顶部工具条 */}
-          <div className="flex justify-between items-center px-2">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+          <div className={styles.toolbar}>
+            <div className={styles.toolbarLeft}>
+              <button
+                className={styles.attachButton}
+                disabled={disabled}
+                title="上传文件"
+              >
+                <Paperclip size={18} />
+              </button>
+              <button
+                className={styles.attachButton}
+                disabled={disabled}
+                title="工具箱"
+              >
+                <Box size={18} />
+              </button>
+            </div>
+
+            {/* Deep Thought Toggle - Mechanical Switch Look */}
+            <div 
               onClick={() => dispatch(toggleThinking())}
-              className={cn(
-                'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300',
-                thinkingEnabled
-                  ? 'bg-elite-gold/20 text-elite-gold border border-elite-gold/50'
-                  : 'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10 hover:text-gray-400'
-              )}
+              className={cn(styles.deepThoughtToggle, thinkingEnabled && styles.deepThoughtToggleActive)}
             >
-              <Sparkles size={14} />
-              <span>深度思考</span>
-            </motion.button>
+              <span className={cn(styles.deepThoughtLabel, thinkingEnabled && styles.deepThoughtLabelActive)}>
+                Deep Thought
+              </span>
+              <div className={cn(styles.toggleSwitch, thinkingEnabled && styles.toggleSwitchActive)}>
+                <div className={cn(styles.toggleThumb, thinkingEnabled && styles.toggleThumbActive)} />
+              </div>
+            </div>
           </div>
 
           {/* 输入区域 */}
-          <div className="relative flex items-end gap-3 w-full">
-            <button
-              className="p-2 text-gray-500 hover:text-elite-gold hover:bg-white/5 rounded-lg transition-all disabled:opacity-50 flex-shrink-0"
-              disabled={disabled}
-              title="上传文件"
-            >
-              <Paperclip size={18} />
-            </button>
-
+          <div className={styles.inputArea}>
             <Textarea
               ref={textareaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={disabled}
-              placeholder={
-                disabled ? '正在接收回复...' : thinkingEnabled ? '输入复杂问题...' : '输入指令...'
-              }
+              placeholder="Insert idea..."
               autoExpand
-              className="flex-1 min-w-0 !border-none !bg-transparent !shadow-none text-gray-100 placeholder-gray-600"
+              className={styles.textarea}
               rows={1}
             />
 
-            <motion.button
-              whileHover={{ scale: disabled || !inputValue.trim() ? 1 : 1.1 }}
-              whileTap={{ scale: disabled || !inputValue.trim() ? 1 : 0.9 }}
+            <button
               onClick={handleSend}
               disabled={disabled || !inputValue.trim()}
               className={cn(
-                'p-2.5 rounded-lg flex items-center justify-center transition-all duration-300 flex-shrink-0',
-                inputValue.trim() && !disabled
-                  ? 'bg-gradient-to-r from-elite-gold to-elite-champagne text-black shadow-lg shadow-elite-gold/30 hover:shadow-elite-gold/50'
-                  : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                styles.sendButton,
+                inputValue.trim() && !disabled && styles.sendButtonActive
               )}
               title="发送"
             >
-              <Send size={18} />
-            </motion.button>
+              {thinkingEnabled ? <Sparkles size={20} /> : <Send size={20} />}
+            </button>
           </div>
 
           {/* 底部提示 */}
-          <div className="text-center text-[10px] text-gray-600 font-mono opacity-70">
-            SYNTH OS v2.0 • SECURE CONNECTION
+          <div className={styles.footer}>
+            Stable Connection • Layer 4
           </div>
 
           {/* 底部光效 */}
-          <div className="absolute -bottom-[1px] left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-elite-gold/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className={styles.glowEffect} />
         </div>
       </div>
     </div>

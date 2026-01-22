@@ -1,17 +1,18 @@
 /**
  * 主应用布局组件
  * Chat 页面保留原本的 SYNTH AI 样式
- * 非 Chat 页面渲染 children，并显示魔法导航栏
  */
 import React, { useRef, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Sparkles, Maximize2, Code, FileText, Home } from 'lucide-react';
+import { Box, Sparkles, Maximize2, Code, FileText, Home, ChevronLeft, ChevronRight, Zap, Layers, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../../styles/utils.js';
 import ParticleBackground from '../ui/ParticleBackground.jsx';
-import ChatArea from '../composite/ChatArea.jsx';
-import InputContainer from '../composite/InputContainer.jsx';
+import ChatArea from '../chat/ChatArea/ChatArea.jsx';
+import InputContainer from '../chat/InputContainer/InputContainer.jsx';
+import { ThemeProvider } from '../shared/ThemeProvider';
+import { chatTheme } from '../../styles/themes';
 import Button from '../ui/Button.jsx';
 import ChatHistory from '../ChatHistory.jsx';
 import MagicNavbar from '../MagicNavbar.jsx';
@@ -45,7 +46,10 @@ const AppLayout = ({ children }) => {
   );
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [activeArtifact] = useState(null);
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isArtifactOpen, setArtifactOpen] = useState(true);
   const containerRef = useRef(null);
+  const canvasRef = useRef(null);
 
   // 视差鼠标跟踪（带防抖和优化）- 必须在条件返回之前定义
   useEffect(() => {
@@ -81,6 +85,86 @@ const AppLayout = ({ children }) => {
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       if (throttleTimer) clearTimeout(throttleTimer);
+    };
+  }, [isChatPage]);
+
+  // Dream Engine - 背景粒子动画（参考样式）
+  useEffect(() => {
+    if (!isChatPage) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    
+    // Resize
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Particles representing "Dream Dust"
+    const particles = Array.from({ length: 100 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 0.5,
+      speedX: (Math.random() - 0.5) * 0.2,
+      speedY: (Math.random() - 0.5) * 0.2,
+      opacity: Math.random() * 0.5 + 0.1,
+      pulse: Math.random() * 0.02
+    }));
+
+    const draw = () => {
+      // Trail effect for "Liquid Time" feel
+      ctx.fillStyle = 'rgba(10, 12, 16, 0.2)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(p => {
+        p.x += p.speedX;
+        p.y += p.speedY;
+        p.opacity += Math.sin(Date.now() * 0.001) * p.pulse;
+
+        // Wrap around
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        // Golden embers color
+        ctx.fillStyle = `rgba(196, 164, 132, ${Math.abs(p.opacity)})`; 
+        ctx.fill();
+      });
+
+      // Draw faint grid lines to represent "The Architect's Grid"
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.lineWidth = 1;
+      const gridSize = 150;
+      const timeOffset = Date.now() * 0.01;
+      
+      // Horizontal bending lines
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        // Bezier curve to simulate folding reality
+        ctx.bezierCurveTo(
+          canvas.width / 3, y + Math.sin(timeOffset * 0.05 + y) * 50,
+          canvas.width / 3 * 2, y - Math.sin(timeOffset * 0.05 + y) * 50,
+          canvas.width, y
+        );
+        ctx.stroke();
+      }
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
     };
   }, [isChatPage]);
 
@@ -172,209 +256,190 @@ const AppLayout = ({ children }) => {
   };
 
   return (
-    <div
-      className="relative w-full h-screen overflow-hidden bg-black text-slate-200 font-sans selection:bg-elite-gold/30"
-      ref={containerRef}
-    >
-      {/* 背景层 */}
+    <ThemeProvider theme={chatTheme}>
       <div
-        className={cn(
-          'absolute inset-0 transition-colors duration-1000',
-          thinkingEnabled ? 'bg-[#0a0510]' : 'bg-[#0f0f0f]'
-        )}
+        className="relative w-full h-screen overflow-hidden bg-[#0a0c10] text-slate-200 font-sans selection:bg-amber-500/30 selection:text-amber-100"
+        ref={containerRef}
       >
-        {/* 径向渐变光源 */}
-        <div
-          className="absolute w-[900px] h-[900px] rounded-full blur-[150px] opacity-15 transition-all duration-1000"
-          style={{
-            background: thinkingEnabled
-              ? 'radial-gradient(circle, #ffd700, #4b0082)'
-              : 'radial-gradient(circle, #d4af37, #b87333)',
-            top: '50%',
-            left: '50%',
-            transform: `translate(-50%, -50%) translate(${mousePos.x * -40}px, ${mousePos.y * -40}px)`,
-          }}
-        />
-      </div>
+        {/* 外部样式和字体 */}
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;500;600;700&display=swap');
+          
+          .font-cinematic { font-family: 'Cinzel', serif; }
+          .font-tech { font-family: 'Rajdhani', sans-serif; }
+          
+          /* Glassmorphism & Liquid Effects */
+          .glass-panel {
+            background: rgba(20, 25, 35, 0.4);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+          }
+          
+          .glass-input {
+            background: rgba(10, 12, 16, 0.7);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(196, 164, 132, 0.2);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+          }
 
-      {/* 粒子背景 */}
-      <ParticleBackground
-        isDeepThinking={thinkingEnabled}
-        intensity="medium"
-        className="opacity-70"
-      />
+          /* 3D Tilt Effect on Hover */
+          .perspective-container {
+            perspective: 1000px;
+          }
+          .tilt-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+          }
+          .tilt-card:hover {
+            transform: translateY(-2px) rotateX(1deg);
+            box-shadow: 0 12px 40px rgba(196, 164, 132, 0.1);
+            border-color: rgba(196, 164, 132, 0.3);
+          }
 
-      {/* 主容器 */}
-      <div
-        className="relative z-10 flex w-full h-full p-6 gap-6 transition-transform duration-100 ease-out"
-        style={tiltStyle}
-      >
-        {/* 左侧: 会话历史 */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="hidden lg:flex flex-col w-72"
-        >
-          <ChatHistory />
-        </motion.div>
+          /* Totem Spinner Animation */
+          @keyframes spin-wobble {
+            0% { transform: rotate(0deg) rotateX(10deg); }
+            50% { transform: rotate(180deg) rotateX(-10deg); }
+            100% { transform: rotate(360deg) rotateX(10deg); }
+          }
+          .animate-totem {
+            animation: spin-wobble 3s linear infinite;
+          }
 
-        {/* 中间: 主聊天界面 */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex-1 flex flex-col backdrop-blur-2xl bg-black/40 border border-white/10 rounded-3xl shadow-2xl relative overflow-hidden"
-        >
-          {/* 顶部条 */}
-          <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-white/5">
+          /* Scrollbar hiding */
+          .no-scrollbar::-webkit-scrollbar { display: none; }
+          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        `}</style>
+
+        {/* 背景Canvas */}
+        <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none opacity-60" />
+
+        {/* 噪声叠加层 (Film Grain) */}
+        <div className="absolute inset-0 z-[1] opacity-[0.03] pointer-events-none" 
+             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
+        </div>
+
+        {/* 主布局网格 */}
+        <div className="relative z-10 flex w-full h-full p-4 gap-4 perspective-container overflow-hidden">
+        
+        {/* === 左侧: HISTORY / MNEMOSYNE === */}
+        <div className={`
+          flex-shrink-0 flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
+          ${isSidebarOpen ? 'w-64 opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-10'}
+          glass-panel rounded-2xl overflow-hidden hidden lg:flex
+        `}>
+          <div className="p-4 border-b border-white/5 flex items-center justify-between">
+            <h2 className="font-cinematic text-amber-500/80 font-bold tracking-widest text-sm">ARCHIVES</h2>
+            <Layers size={14} className="text-white/40" />
+          </div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
+            <ChatHistory />
+          </div>
+          {/* User Profile / Stats */}
+          <div className="p-4 bg-black/20 mt-auto border-t border-white/5">
             <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  'p-2 rounded-lg transition-all duration-500',
-                  thinkingEnabled ? 'bg-elite-gold/20 text-elite-gold' : 'bg-elite-gold/20 text-elite-gold'
-                )}
-              >
-                <Box size={20} />
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-slate-800 border border-amber-500/30 flex items-center justify-center">
+                <span className="font-cinematic text-xs font-bold">A</span>
               </div>
-              <div>
-                <h1 className="font-bold text-lg tracking-wider">
-                  SYNTH <span className="font-thin opacity-50">AI</span>
-                </h1>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'w-1.5 h-1.5 rounded-full animate-pulse',
-                      thinkingEnabled ? 'bg-elite-gold' : 'bg-green-500'
-                    )}
-                  />
-                  <span className="text-[10px] uppercase tracking-widest opacity-60">
-                    {thinkingEnabled ? 'Deep Processing Active' : 'Systems Nominal'}
-                  </span>
-                </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-cinematic text-slate-200">Architect</span>
+                <span className="text-[10px] font-tech text-slate-500">Sync: 98%</span>
               </div>
             </div>
-            
-            {/* 返回首页按钮 */}
-            <motion.button
-              className="p-2 rounded-lg text-gray-400 hover:text-elite-gold hover:bg-elite-gold/10 transition-all"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => navigate('/')}
-              title="返回首页"
-            >
-              <Home className="w-5 h-5" />
-            </motion.button>
-          </header>
+          </div>
+        </div>
 
-          {/* 聊天区域 */}
-          <ChatArea />
+        {/* === 中间: THE LIMBO / CHAT === */}
+        <div className="flex-1 flex flex-col relative rounded-2xl overflow-hidden glass-panel border-opacity-50 transition-all duration-500">
+          
+          {/* Header */}
+          <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#0a0c10]/80 to-transparent z-20 flex items-center justify-between px-6 pointer-events-none">
+            <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="pointer-events-auto p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors hidden lg:block">
+              {isSidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            </button>
+            <h1 className="font-cinematic text-2xl tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-slate-200 via-amber-100 to-slate-200 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+              CONSTRUCT
+            </h1>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setArtifactOpen(!isArtifactOpen)} className="pointer-events-auto p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors hidden xl:block">
+                {isArtifactOpen ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+              </button>
+              <motion.button
+                className="pointer-events-auto p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => navigate('/')}
+                title="返回首页"
+              >
+                <Home size={18} />
+              </motion.button>
+            </div>
+          </div>
 
-          {/* 输入框 */}
-          <div className="p-6 bg-gradient-to-t from-black/80 to-transparent border-t border-white/5">
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto px-6 pt-20 pb-40 space-y-8 no-scrollbar scroll-smooth">
+            <ChatArea />
+          </div>
+
+          {/* --- INPUT ZONE (Sticky Bottom) --- */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 z-30">
             <InputContainer
               onSend={handleSendMessage}
               disabled={isStreaming}
             />
           </div>
-        </motion.div>
+        </div>
 
-        {/* 右侧: Artifact 面板 */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className={cn(
-            'hidden xl:flex flex-col w-80 backdrop-blur-2xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all duration-500',
-            activeArtifact ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-50 grayscale',
-            thinkingEnabled ? 'bg-elite-gold/5' : 'bg-elite-gold/5'
-          )}
-        >
-          {/* 头部 */}
-          <div className="p-5 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-white/5 to-transparent">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-elite-gold" />
-              <span className="text-sm font-bold tracking-widest uppercase">Artifact</span>
+        {/* === 右侧: ARTIFACTS / TOTEM ROOM === */}
+        <div className={`
+          flex-shrink-0 flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
+          ${isArtifactOpen ? 'w-80 opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-10'}
+          glass-panel rounded-2xl ml-4 overflow-hidden border-l border-amber-500/10 hidden xl:flex
+        `}>
+          <div className="p-4 border-b border-white/5 bg-black/20 flex items-center justify-between">
+            <h2 className="font-cinematic text-amber-500/80 font-bold tracking-widest text-sm">CONSTRUCTS</h2>
+            <div className="flex gap-2">
+              <RotateCcw size={14} className="text-white/40 cursor-pointer hover:text-white" />
+              <Maximize2 size={14} className="text-white/40 cursor-pointer hover:text-white" />
             </div>
-            <Maximize2 size={14} className="opacity-50 hover:opacity-100 cursor-pointer" />
           </div>
 
-          {/* 内容区 */}
-          <div className="flex-1 p-5 overflow-y-auto custom-scrollbar relative">
-            {!activeArtifact ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 opacity-30">
-                <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity }}>
-                  <Box size={48} className="mb-4" />
-                </motion.div>
-                <p className="text-sm">Waiting for output...</p>
-              </div>
-            ) : (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  {activeArtifact.type === 'code' ? (
-                    <Code size={16} className="text-elite-rose" />
-                  ) : (
-                    <FileText size={16} className="text-elite-champagne" />
-                  )}
-                  <span className="text-xs font-mono text-elite-rose bg-elite-rose/10 px-2 py-0.5 rounded">
-                    {activeArtifact.title}
-                  </span>
-                </div>
-                <div className="bg-black/40 rounded-lg p-4 font-mono text-xs border border-white/5 text-gray-300 overflow-x-auto max-h-96">
-                  <pre className="whitespace-pre-wrap break-words">{activeArtifact.content}</pre>
-                </div>
-                <div className="mt-6 space-y-3">
-                  <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                    <motion.div
-                      animate={{ width: ['0%', '100%', '0%'] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="h-full rounded-full bg-elite-gold"
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px] uppercase tracking-widest opacity-50">
-                    <span>Stability: 98%</span>
-                    <span>Complexity: High</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </div>
+          <div className="flex-1 overflow-hidden flex flex-col relative">
+             {/* Artifact Tabs */}
+             <div className="flex overflow-x-auto border-b border-white/5 no-scrollbar">
+               <div className="px-4 py-3 text-xs font-tech cursor-pointer whitespace-nowrap transition-colors border-b-2 text-amber-100 border-amber-500 bg-white/5">
+                 Artifact_01.tsx
+               </div>
+             </div>
 
-          {/* 底部按钮 */}
-          <div className="p-5 border-t border-white/5">
-            <Button
-              fullWidth
-              variant={thinkingEnabled ? 'secondary' : 'ghost'}
-              className={cn(
-                'text-xs uppercase tracking-wider font-semibold',
-                thinkingEnabled
-                  ? 'bg-elite-gold/10 text-elite-gold border border-elite-gold/30 hover:bg-elite-gold/20'
-                  : 'bg-elite-gold/10 text-elite-gold border border-elite-gold/30 hover:bg-elite-gold/20'
-              )}
-            >
-              Export Artifact
-            </Button>
+             {/* Artifact Content (Code/Preview) */}
+             <div className="flex-1 p-4 bg-[#0d1117] font-mono text-xs text-green-400/80 overflow-auto relative">
+               {/* Decorative grid overlay for the artifact area */}
+               <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
+               
+               <pre className="relative z-10 leading-loose">
+                 <code>
+                   {activeArtifact ? activeArtifact.content : '// No data loaded...'}
+                 </code>
+               </pre>
+
+               {/* Floating holographic element */}
+               <div className="absolute bottom-4 right-4 animate-pulse opacity-50">
+                  <Box size={24} className="text-amber-500" />
+               </div>
+             </div>
           </div>
-        </motion.div>
+          
+          {/* Artifact Footer */}
+          <div className="p-3 border-t border-white/5 bg-black/40 flex justify-between items-center text-[10px] text-slate-500 font-tech">
+             <span>MEM: 14TB</span>
+             <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/> LIVE PREVIEW</span>
+          </div>
+        </div>
       </div>
 
-      {/* 全局样式定义 */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.02);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(212, 175, 55, 0.2);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(212, 175, 55, 0.4);
-        }
-      `}</style>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 };
 

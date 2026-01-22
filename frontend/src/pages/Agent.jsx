@@ -32,6 +32,8 @@ import {
   getConversationMessages 
 } from '../services/api';
 import MarkdownRenderer from '../components/MarkdownRenderer';
+import { ThemeProvider } from '../components/shared/ThemeProvider';
+import { agentTheme } from '../styles/themes';
 
 // --- 组件：背景动态流体 ---
 // 使用纯CSS动画模拟流动的空气感背景
@@ -231,8 +233,9 @@ export default function Agent() {
   };
 
   return (
-    <div className="relative w-full h-screen font-sans text-slate-600 selection:bg-teal-100 selection:text-teal-800">
-      <AmbientBackground />
+    <ThemeProvider theme={agentTheme}>
+      <div className="relative w-full h-screen font-sans text-slate-600 selection:bg-teal-100 selection:text-teal-800" style={{ backgroundColor: agentTheme.colors.background }}>
+        <AmbientBackground />
 
       {/* 布局容器：使用Flex配合绝对定位创造空间感 */}
       <div className="relative z-10 flex w-full h-full p-6 gap-6 overflow-hidden">
@@ -349,10 +352,10 @@ export default function Agent() {
                       style={{ animationDelay: `${idx * 0.1}s` }}
                     >
                       <div className={`
-                        relative max-w-[80%] md:max-w-[70%] rounded-3xl backdrop-blur-md border shadow-sm
+                        relative rounded-3xl backdrop-blur-md border shadow-sm
                         ${msg.role === 'user' 
-                          ? 'bg-slate-800/5 border-slate-200/50 text-slate-700 rounded-br-none p-6' 
-                          : 'bg-white/70 border-white/60 text-slate-600 rounded-tl-none shadow-indigo-100/50 p-6'
+                          ? 'max-w-[80%] md:max-w-[70%] bg-slate-800/5 border-slate-200/50 text-slate-700 rounded-br-none p-6' 
+                          : 'max-w-[95%] md:max-w-[90%] lg:max-w-[85%] bg-white/70 border-white/60 text-slate-600 rounded-tl-none shadow-indigo-100/50 p-6'
                         }
                       `}>
                         {/* Role Label */}
@@ -526,6 +529,7 @@ export default function Agent() {
            mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
         }
       `}</style>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }

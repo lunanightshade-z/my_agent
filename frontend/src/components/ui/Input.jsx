@@ -106,11 +106,12 @@ const Textarea = forwardRef(
     };
 
     const baseStyle = cn(
-      'w-full bg-transparent border',
+      'bg-transparent border',
       'text-gray-100 placeholder-gray-600',
       'transition-all duration-300',
       'focus-visible:outline-none',
       'resize-none',
+      'w-full min-w-0',
       error
         ? 'border-red-500/50 focus:border-red-500 focus:shadow-[0_0_10px_rgba(239,68,68,0.2)]'
         : 'border-white/20 focus:border-cyan-500/50 focus:shadow-[0_0_10px_rgba(0,255,255,0.2)]',
@@ -121,7 +122,7 @@ const Textarea = forwardRef(
     );
 
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col min-w-0 flex-1">
         <textarea
           ref={internalRef}
           className={baseStyle}
