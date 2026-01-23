@@ -41,6 +41,20 @@ const ChatHistory = () => {
     
     try {
       dispatch(setLoading(true));
+      
+      // 验证会话是否属于 chat 类型
+      const targetConv = conversations.find(c => c.id === convId);
+      if (!targetConv) {
+        console.warn('会话不存在于列表中');
+        dispatch(setLoading(false));
+        return;
+      }
+      if (targetConv.conversation_type !== 'chat') {
+        console.warn('会话类型不匹配，期望: chat, 实际:', targetConv.conversation_type);
+        dispatch(setLoading(false));
+        return;
+      }
+      
       dispatch(setCurrentConversation(convId));
       const messages = await getConversationMessages(convId);
       dispatch(setMessages(messages));
@@ -48,16 +62,40 @@ const ChatHistory = () => {
       // 重新加载会话列表以获取最新信息（标题、更新时间等）
       const updatedConvs = await getConversations('chat');
       dispatch(setConversations(updatedConvs));
+      
+      // 再次验证当前会话是否还在列表中且类型正确
+      const updatedConv = updatedConvs.find(c => c.id === convId);
+      if (!updatedConv || updatedConv.conversation_type !== 'chat') {
+        console.warn('会话类型验证失败，清空状态');
+        dispatch(setCurrentConversation(null));
+        dispatch(setMessages([]));
+      }
     } catch (error) {
       console.error('加载消息失败:', error);
+      dispatch(setCurrentConversation(null));
+      dispatch(setMessages([]));
     } finally {
       dispatch(setLoading(false));
     }
-  }, [currentConversationId, dispatch]);
+  }, [currentConversationId, conversations, dispatch]);
 
   // 加载会话列表
   useEffect(() => {
-    loadConversations();
+    const loadAndValidate = async () => {
+      await loadConversations();
+      
+      // 如果当前选中的会话不在新的会话列表中，清空状态
+      if (currentConversationId) {
+        const convs = await getConversations('chat');
+        const currentConv = convs.find(c => c.id === currentConversationId);
+        if (!currentConv || currentConv.conversation_type !== 'chat') {
+          console.log('当前会话不属于 chat 类型，清空状态');
+          dispatch(setCurrentConversation(null));
+          dispatch(setMessages([]));
+        }
+      }
+    };
+    loadAndValidate();
   }, []);
 
   // 当对话列表加载完成且没有当前对话时，自动选择第一个对话

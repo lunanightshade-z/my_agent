@@ -37,41 +37,94 @@
   color: inherit;
 }
 
-.heading-h1 {
+/* Agent页面：标题颜色明确设置为黑色，避免继承导致的颜色问题 */
+/* Agent页面（浅色主题）：标题颜色为黑色 */
+.heading-h1.theme-light,
+.heading-h1:not(.theme-dark) {
   font-size: 1.8rem;
   margin-top: 2rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid rgba(0, 255, 255, 0.2);
+  color: #1e293b !important; /* 明确设置为深灰色（接近黑色），避免继承绿色 */
 }
 
-.heading-h2 {
+.heading-h2.theme-light,
+.heading-h2:not(.theme-dark) {
   font-size: 1.5rem;
   margin-top: 1.75rem;
   padding-bottom: 0.3rem;
   border-bottom: 1px solid rgba(0, 255, 255, 0.15);
+  color: #1e293b !important; /* 明确设置为深灰色（接近黑色），避免继承绿色 */
 }
 
-.heading-h3 {
+/* Chat页面（深色主题）：标题颜色为白色 */
+.heading-h1.theme-dark {
+  font-size: 1.8rem;
+  margin-top: 2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff !important; /* 深色主题下标题为白色 */
+}
+
+.heading-h2.theme-dark {
+  font-size: 1.5rem;
+  margin-top: 1.75rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff !important; /* 深色主题下标题为白色 */
+}
+
+/* Agent页面（浅色主题）：h3-h6标题颜色为深灰色 */
+.heading-h3.theme-light,
+.heading-h3:not(.theme-dark) {
   font-size: 1.3rem;
-  color: #334155;
+  color: #334155 !important;
   font-weight: 700;
 }
 
-.heading-h4 {
+.heading-h4.theme-light,
+.heading-h4:not(.theme-dark) {
   font-size: 1.1rem;
-  color: #334155;
+  color: #334155 !important;
   font-weight: 700;
 }
 
-.heading-h5 {
+.heading-h5.theme-light,
+.heading-h5:not(.theme-dark) {
   font-size: 1rem;
-  color: #334155;
+  color: #334155 !important;
   font-weight: 700;
 }
 
-.heading-h6 {
+.heading-h6.theme-light,
+.heading-h6:not(.theme-dark) {
   font-size: 0.95rem;
-  color: #334155;
+  color: #334155 !important;
+  font-weight: 600;
+}
+
+/* Chat页面（深色主题）：h3-h6标题颜色为白色 */
+.heading-h3.theme-dark {
+  font-size: 1.3rem;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.heading-h4.theme-dark {
+  font-size: 1.1rem;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.heading-h5.theme-dark {
+  font-size: 1rem;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.heading-h6.theme-dark {
+  font-size: 0.95rem;
+  color: #ffffff !important;
   font-weight: 600;
 }
 
@@ -307,11 +360,32 @@
 }
 
 /* ============ 强调和删除线 ============ */
-
-strong,
-b {
+/* 确保strong/b标签的样式只在markdown-message容器内生效，不影响标题元素本身 */
+.markdown-message strong:not(.heading):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.markdown-message b:not(.heading):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.markdown-message strong,
+.markdown-message b {
   font-weight: 700;
   color: #0d9488;
+}
+
+/* 标题内的strong/b标签应该继承标题的颜色 */
+.heading strong,
+.heading b,
+.heading-h1 strong,
+.heading-h1 b,
+.heading-h2 strong,
+.heading-h2 b,
+.heading-h3 strong,
+.heading-h3 b,
+.heading-h4 strong,
+.heading-h4 b,
+.heading-h5 strong,
+.heading-h5 b,
+.heading-h6 strong,
+.heading-h6 b {
+  color: inherit;
+  font-weight: inherit;
 }
 
 em,

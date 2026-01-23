@@ -20,7 +20,7 @@ from app.infrastructure.logging.setup import get_logger
 # ==================== 配置常量 ====================
 # Agent模型配置
 AGENT_MODEL_NAME = "qwen3-235b-instruct"  # 默认模型（用于通义千问）
-AGENT_MAX_TOOL_ITERATIONS = 5
+AGENT_MAX_TOOL_ITERATIONS = 10
 AGENT_TEMPERATURE = 0.7
 
 # 智谱AI模型配置（当base_url指向智谱AI时使用）

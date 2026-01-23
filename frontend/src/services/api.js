@@ -200,6 +200,23 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
  * 发送智能体消息（流式 - 支持工具调用）
  * 使用 fetch 处理 SSE 流式响应
  */
+/**
+ * 生成RSS缓存
+ */
+export const generateRSSCache = async () => {
+  try {
+    const response = await apiClient.post('/agent/rss-cache/generate');
+    return response.data;
+  } catch (error) {
+    console.error('生成RSS缓存失败:', error);
+    throw error.response?.data?.detail || error.message || '生成缓存失败';
+  }
+};
+
+/**
+ * 发送智能体消息（流式 - 支持工具调用）
+ * 使用 fetch 处理 SSE 流式响应
+ */
 export const sendAgentMessageStream = (conversationId, message, onToolCall, onToolResult, onChunk, onDone, onError) => {
   const url = `${API_BASE_URL}/agent/stream`;
   

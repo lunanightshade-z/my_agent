@@ -6,13 +6,14 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Send, 
   Paperclip, 
   AlignLeft,
   Plus,
-  Home
+  Home,
+  RefreshCw
 } from 'lucide-react';
 import {
   addUserMessage,
@@ -31,7 +32,8 @@ import {
   generateConversationTitle, 
   getConversations, 
   createConversation,
-  getConversationMessages 
+  getConversationMessages,
+  generateRSSCache
 } from '../services/api';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import { ThemeProvider } from '../components/shared/ThemeProvider';
@@ -52,12 +54,25 @@ const AmbientBackground = () => (
 export default function Agent() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     currentConversationId, 
     messages, 
     isStreaming, 
     conversations 
   } = useSelector((state) => state.chat);
+  
+  // 页面挂载时，清空不属于 agent 类型的会话状态
+  useEffect(() => {
+    if (currentConversationId) {
+      const currentConv = conversations.find(c => c.id === currentConversationId);
+      if (!currentConv || currentConv.conversation_type !== 'agent') {
+        console.log('Agent 页面：检测到不匹配的会话类型，清空状态');
+        dispatch(setCurrentConversation(null));
+        dispatch(setMessages([]));
+      }
+    }
+  }, [location.pathname]); // 当路由变化到 /agent 时触发
 
   // 调试：监听消息变化
   useEffect(() => {
@@ -68,6 +83,7 @@ export default function Agent() {
   }, [messages]);
 
   const [inputValue, setInputValue] = useState('');
+  const [isGeneratingCache, setIsGeneratingCache] = useState(false);
   const messagesEndRef = useRef(null);
   const skipNextLoadRef = useRef(false);
 
@@ -86,12 +102,22 @@ export default function Agent() {
       try {
         const convs = await getConversations('agent');
         dispatch(setConversations(convs));
+        
+        // 如果当前选中的会话不在新的会话列表中，清空状态
+        if (currentConversationId) {
+          const currentConv = convs.find(c => c.id === currentConversationId);
+          if (!currentConv || currentConv.conversation_type !== 'agent') {
+            console.log('当前会话不属于 agent 类型，清空状态');
+            dispatch(setCurrentConversation(null));
+            dispatch(setMessages([]));
+          }
+        }
       } catch (error) {
         console.error('加载会话列表失败:', error);
       }
     };
     loadConversations();
-  }, [dispatch]);
+  }, [dispatch, currentConversationId]);
 
   // 加载选中会话的消息
   useEffect(() => {
@@ -102,6 +128,23 @@ export default function Agent() {
       }
       const loadMessages = async () => {
         try {
+          // 验证当前会话是否属于 agent 类型
+          const currentConv = conversations.find(c => c.id === currentConversationId);
+          if (!currentConv) {
+            // 如果当前会话不在列表中，说明可能是其他类型的会话，清空状态
+            console.warn('当前会话不属于 agent 类型，清空状态');
+            dispatch(setCurrentConversation(null));
+            dispatch(setMessages([]));
+            return;
+          }
+          if (currentConv.conversation_type !== 'agent') {
+            // 如果会话类型不匹配，清空状态
+            console.warn('会话类型不匹配，清空状态。期望: agent, 实际:', currentConv.conversation_type);
+            dispatch(setCurrentConversation(null));
+            dispatch(setMessages([]));
+            return;
+          }
+          
           const msgs = await getConversationMessages(currentConversationId);
           // 转换消息格式，确保格式统一
           const formattedMessages = msgs.map(msg => ({
@@ -116,6 +159,9 @@ export default function Agent() {
           dispatch(setMessages(formattedMessages));
         } catch (error) {
           console.error('加载消息失败:', error);
+          // 如果加载失败，清空状态
+          dispatch(setCurrentConversation(null));
+          dispatch(setMessages([]));
         }
       };
       loadMessages();
@@ -123,7 +169,7 @@ export default function Agent() {
       // 如果没有选中会话，清空消息
       dispatch(setMessages([]));
     }
-  }, [currentConversationId, dispatch]);
+  }, [currentConversationId, conversations, dispatch]);
 
   // 发送消息
   const handleSendMessage = async () => {
@@ -249,6 +295,27 @@ export default function Agent() {
     }
   };
 
+  // 生成RSS缓存
+  const handleGenerateCache = async () => {
+    setIsGeneratingCache(true);
+    try {
+      const result = await generateRSSCache();
+      dispatch(addToast({
+        type: 'success',
+        message: 'RSS缓存生成成功！',
+        duration: 3000,
+      }));
+    } catch (error) {
+      dispatch(addToast({
+        type: 'error',
+        message: `生成缓存失败: ${error.message || error}`,
+        duration: 4000,
+      }));
+    } finally {
+      setIsGeneratingCache(false);
+    }
+  };
+
   return (
     <ThemeProvider theme={agentTheme}>
       <div className="relative w-full h-screen font-sans text-slate-600 selection:bg-teal-100 selection:text-teal-800" style={{ backgroundColor: agentTheme.colors.background }}>
@@ -334,15 +401,40 @@ export default function Agent() {
           
           {/* 顶部标题区 - 极简 */}
           <div className="w-full flex justify-between items-center mb-4 px-4">
-            <h2 className="text-xl font-light tracking-wide text-slate-700">
-              {currentConversationId 
-                ? conversations.find(c => c.id === currentConversationId)?.title || 'Agent Chat'
-                : 'Agent Chat'
-              }
-            </h2>
-            <div className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${isStreaming ? 'bg-green-400 animate-pulse' : 'bg-green-400'}`}></span>
-              <span className="text-xs text-slate-400 font-medium">{isStreaming ? 'Thinking...' : 'Online'}</span>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-light tracking-wide text-slate-700">
+                {currentConversationId 
+                  ? conversations.find(c => c.id === currentConversationId)?.title || 'Agent Chat'
+                  : 'Agent Chat'
+                }
+              </h2>
+              {/* Agent Badge */}
+              <span className="px-3 py-1 rounded-full bg-teal-100/50 border border-teal-200/50 text-xs font-medium text-teal-700">
+                Agent
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${isStreaming ? 'bg-green-400 animate-pulse' : 'bg-green-400'}`}></span>
+                <span className="text-xs text-slate-400 font-medium">{isStreaming ? 'Thinking...' : 'Online'}</span>
+              </div>
+              {/* Chat 切换按钮 */}
+              <button
+                onClick={() => navigate('/chat')}
+                className="
+                  px-3 py-1.5 rounded-lg
+                  bg-white/50 hover:bg-white/70
+                  border border-slate-200/50 hover:border-slate-300/70
+                  text-sm text-slate-600 hover:text-slate-700
+                  transition-all duration-200
+                  flex items-center gap-1.5
+                  hover:scale-105 active:scale-95
+                "
+                title="切换到 Chat"
+              >
+                <span>💬</span>
+                <span>Chat</span>
+              </button>
             </div>
           </div>
 
@@ -437,16 +529,40 @@ export default function Agent() {
           </div>
 
           {/* --- 悬浮控制胶囊 (输入区) --- */}
-          <div className="absolute bottom-6 w-full max-w-2xl px-4 z-50">
+          <div className="absolute bottom-6 w-full max-w-2xl px-4 z-50 group">
+            {/* 渐变光晕背景 */}
             <div className="
-              relative w-full p-2 bg-white/80 backdrop-blur-xl rounded-[2rem] 
-              border border-white shadow-2xl shadow-indigo-500/10 
-              flex flex-col gap-2 transition-all duration-300
-              focus-within:shadow-indigo-500/20 focus-within:scale-[1.01]
+              absolute inset-x-8 -inset-y-2 rounded-[2.5rem]
+              bg-gradient-to-r from-teal-200/0 via-teal-200/5 to-teal-200/0
+              opacity-0 group-focus-within:opacity-100 
+              transition-opacity duration-500
+              -z-10
+              blur-xl
+            "></div>
+            
+            <div className="
+              relative w-full p-3 bg-gradient-to-br from-white/90 via-white/85 to-white/80 
+              backdrop-blur-xl rounded-[2.5rem] 
+              border border-white/60 
+              shadow-2xl shadow-teal-500/5
+              hover:shadow-teal-500/15
+              hover:border-white/80
+              flex flex-col gap-2 
+              transition-all duration-300 ease-out
+              focus-within:shadow-2xl focus-within:shadow-teal-500/20 
+              focus-within:scale-[1.02]
+              focus-within:border-teal-200/50
             ">
               {/* 输入框 */}
               <div className="flex items-end gap-2 px-2">
-                <button className="p-3 rounded-full text-slate-400 hover:text-teal-500 hover:bg-teal-50 transition-colors">
+                <button className="
+                  p-3 rounded-full 
+                  text-slate-400 hover:text-teal-500 
+                  bg-transparent hover:bg-teal-50/80
+                  transition-all duration-200
+                  hover:scale-110
+                  active:scale-95
+                ">
                   <Paperclip size={20} />
                 </button>
                 <textarea
@@ -454,7 +570,12 @@ export default function Agent() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
                   placeholder="Ask anything..."
-                  className="flex-1 bg-transparent border-none outline-none resize-none py-3 max-h-32 text-slate-700 placeholder:text-slate-400/70 text-base"
+                  className="
+                    flex-1 bg-transparent border-none outline-none resize-none 
+                    py-3 max-h-32 text-slate-700 placeholder:text-slate-400/70 
+                    text-base font-medium
+                    group-focus-within:text-slate-800
+                  "
                   rows={1}
                   style={{ minHeight: '48px' }}
                   disabled={isStreaming}
@@ -464,8 +585,9 @@ export default function Agent() {
                   disabled={isStreaming || !inputValue.trim()}
                   className={`
                     p-3 rounded-full transition-all duration-300 shadow-md
+                    hover:scale-110 active:scale-95
                     ${inputValue.trim() && !isStreaming
-                      ? 'bg-slate-800 text-white hover:bg-slate-700 shadow-slate-800/20' 
+                      ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/40 hover:from-teal-600 hover:to-teal-700 hover:shadow-teal-500/60' 
                       : 'bg-slate-100 text-slate-300 shadow-transparent cursor-default'}
                   `}
                 >
@@ -474,13 +596,23 @@ export default function Agent() {
               </div>
 
               {/* 底部工具栏 */}
-              <div className="flex justify-between items-center px-4 pb-1 pl-14">
+              <div className="
+                flex justify-between items-center px-4 pb-1 pl-14
+                border-t border-white/20
+                pt-2
+              ">
                 <div className="relative">
                   {/* 可以在这里添加模型选择等功能 */}
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-slate-300 font-mono tracking-tighter">AGENT v1.0</span>
+                  <span className="
+                    text-[10px] text-slate-400 font-mono tracking-tighter 
+                    group-hover:text-teal-500
+                    transition-colors duration-200
+                  ">
+                    AGENT v1.0
+                  </span>
                 </div>
               </div>
             </div>
@@ -489,6 +621,23 @@ export default function Agent() {
 
         {/* --- 右侧：灵感碎片 (上下文总结) --- */}
         <div className="hidden lg:flex w-72 flex-col gap-4 pt-12">
+          {/* <div className="mb-4">
+            <button
+              onClick={handleGenerateCache}
+              disabled={isGeneratingCache}
+              className="w-full h-10 px-3 bg-gradient-to-r from-teal-400 to-teal-500 text-white rounded-xl flex items-center justify-center gap-2 shadow-sm border border-teal-300/50 cursor-pointer hover:scale-105 transition-transform hover:from-teal-500 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              title="立即生成RSS缓存"
+            >
+              <RefreshCw 
+                className={`text-white ${isGeneratingCache ? 'animate-spin' : ''}`} 
+                size={16} 
+              />
+              <span className="text-xs font-medium">
+                {isGeneratingCache ? '生成中...' : 'get news'}
+              </span>
+            </button>
+          </div> */}
+          
           <div className="bg-white/40 backdrop-blur-md rounded-[2rem] p-6 border border-white/50 shadow-sm h-fit">
             <div className="flex items-center gap-2 mb-6 text-slate-400">
               <AlignLeft size={16} />

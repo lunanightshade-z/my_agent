@@ -90,9 +90,9 @@ const LinkComponent = ({ href, children }) => (
   </a>
 );
 
-// 标题组件
-const HeadingComponent = ({ level, children }) => {
-  const headingClass = `heading heading-h${level}`;
+// 标题组件 - 支持主题
+const HeadingComponent = ({ level, children, theme = 'light' }) => {
+  const headingClass = `heading heading-h${level} ${theme === 'dark' ? 'theme-dark' : 'theme-light'}`;
   return React.createElement(`h${level}`, { className: headingClass }, children);
 };
 
@@ -176,26 +176,26 @@ const ParagraphComponent = ({ children }) => (
 );
 
 // 主渲染器组件
-export default function MarkdownRenderer({ content, className = '' }) {
+export default function MarkdownRenderer({ content, className = '', theme = 'light' }) {
   // 如果内容为空，返回占位符
   if (!content || !content.trim()) {
-    return <div className={`markdown-message ${className}`}></div>;
+    return <div className={`markdown-message ${className} ${theme === 'dark' ? 'theme-dark' : 'theme-light'}`}></div>;
   }
 
   return (
-    <div className={`markdown-message ${className}`}>
+    <div className={`markdown-message ${className} ${theme === 'dark' ? 'theme-dark' : 'theme-light'}`}>
       <ReactMarkdown
         remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[rehypeKatex]}
         components={{
           code: CodeBlock,
           a: LinkComponent,
-          h1: ({ children }) => <HeadingComponent level={1}>{children}</HeadingComponent>,
-          h2: ({ children }) => <HeadingComponent level={2}>{children}</HeadingComponent>,
-          h3: ({ children }) => <HeadingComponent level={3}>{children}</HeadingComponent>,
-          h4: ({ children }) => <HeadingComponent level={4}>{children}</HeadingComponent>,
-          h5: ({ children }) => <HeadingComponent level={5}>{children}</HeadingComponent>,
-          h6: ({ children }) => <HeadingComponent level={6}>{children}</HeadingComponent>,
+          h1: ({ children }) => <HeadingComponent level={1} theme={theme}>{children}</HeadingComponent>,
+          h2: ({ children }) => <HeadingComponent level={2} theme={theme}>{children}</HeadingComponent>,
+          h3: ({ children }) => <HeadingComponent level={3} theme={theme}>{children}</HeadingComponent>,
+          h4: ({ children }) => <HeadingComponent level={4} theme={theme}>{children}</HeadingComponent>,
+          h5: ({ children }) => <HeadingComponent level={5} theme={theme}>{children}</HeadingComponent>,
+          h6: ({ children }) => <HeadingComponent level={6} theme={theme}>{children}</HeadingComponent>,
           ul: UnorderedListComponent,
           ol: OrderedListComponent,
           li: ListItemComponent,

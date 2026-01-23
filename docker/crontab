@@ -1,0 +1,3 @@
+# RSS缓存生成任务 - 每日01:00执行
+# 时区: Asia/Shanghai
+0 1 * * * /usr/local/bin/python3 /app/tools/rss_cache_job.py >> /app/logs/rss_cache.log 2>&1

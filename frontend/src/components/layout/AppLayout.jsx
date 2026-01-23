@@ -25,6 +25,7 @@ import {
   addToast,
   setConversations,
   setCurrentConversation,
+  setMessages,
 } from '../../store/store';
 import {
   createConversation,
@@ -41,9 +42,21 @@ const AppLayout = ({ children }) => {
   const showMagicNavbar = !isChatPage;
 
   // 所有hooks必须在条件返回之前调用
-  const { thinkingEnabled, currentConversationId, messages, isStreaming } = useSelector(
+  const { thinkingEnabled, currentConversationId, messages, isStreaming, conversations } = useSelector(
     (state) => state.chat
   );
+  
+  // Chat 页面挂载时，清空不属于 chat 类型的会话状态
+  useEffect(() => {
+    if (isChatPage && currentConversationId) {
+      const currentConv = conversations.find(c => c.id === currentConversationId);
+      if (!currentConv || currentConv.conversation_type !== 'chat') {
+        console.log('Chat 页面：检测到不匹配的会话类型，清空状态');
+        dispatch(setCurrentConversation(null));
+        dispatch(setMessages([]));
+      }
+    }
+  }, [location.pathname, isChatPage, currentConversationId, conversations, dispatch]);
   const [activeArtifact] = useState(null);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isArtifactOpen, setArtifactOpen] = useState(true);
@@ -317,6 +330,25 @@ const AppLayout = ({ children }) => {
               CONSTRUCT
             </h1>
             <div className="flex items-center gap-2">
+              {/* Agent 切换按钮 */}
+              <motion.button
+                className="
+                  pointer-events-auto px-3 py-1.5 rounded-lg
+                  bg-white/10 hover:bg-white/20
+                  border border-amber-500/20 hover:border-amber-500/40
+                  text-xs font-tech text-amber-100 hover:text-amber-50
+                  transition-all duration-200
+                  flex items-center gap-1.5
+                "
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/agent')}
+                title="切换到 Agent"
+              >
+                <span>🤖</span>
+                <span>AGENT</span>
+              </motion.button>
+              
               <button onClick={() => setArtifactOpen(!isArtifactOpen)} className="pointer-events-auto p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors hidden xl:block">
                 {isArtifactOpen ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
               </button>
@@ -358,32 +390,6 @@ const AppLayout = ({ children }) => {
               <RotateCcw size={14} className="text-white/40 cursor-pointer hover:text-white" />
               <Maximize2 size={14} className="text-white/40 cursor-pointer hover:text-white" />
             </div>
-          </div>
-
-          <div className="flex-1 overflow-hidden flex flex-col relative">
-             {/* Artifact Tabs */}
-             <div className="flex overflow-x-auto border-b border-white/5 no-scrollbar">
-               <div className="px-4 py-3 text-xs font-tech cursor-pointer whitespace-nowrap transition-colors border-b-2 text-amber-100 border-amber-500 bg-white/5">
-                 Artifact_01.tsx
-               </div>
-             </div>
-
-             {/* Artifact Content (Code/Preview) */}
-             <div className="flex-1 p-4 bg-[#0d1117] font-mono text-xs text-green-400/80 overflow-auto relative">
-               {/* Decorative grid overlay for the artifact area */}
-               <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
-               
-               <pre className="relative z-10 leading-loose">
-                 <code>
-                   {activeArtifact ? activeArtifact.content : '// No data loaded...'}
-                 </code>
-               </pre>
-
-               {/* Floating holographic element */}
-               <div className="absolute bottom-4 right-4 animate-pulse opacity-50">
-                  <Box size={24} className="text-amber-500" />
-               </div>
-             </div>
           </div>
           
           {/* Artifact Footer */}
