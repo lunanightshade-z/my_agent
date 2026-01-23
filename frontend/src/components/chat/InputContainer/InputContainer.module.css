@@ -89,8 +89,8 @@
   background: rgba(10, 12, 16, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(196, 164, 132, 0.2);
-  box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  box-shadow: 0 0 24px rgba(217, 119, 6, 0.18), 0 -10px 40px rgba(0,0,0,0.5);
   transition: all 0.5s ease;
 }
 

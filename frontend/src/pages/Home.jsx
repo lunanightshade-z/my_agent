@@ -131,7 +131,7 @@ export default function Home() {
   const castSpell = () => {
     setSpellCast(true);
     setTimeout(() => {
-      navigate('/chat');
+      navigate('/agent');
     }, 500);
     setTimeout(() => setSpellCast(false), 2000);
   };

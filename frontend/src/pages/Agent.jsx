@@ -121,6 +121,9 @@ export default function Agent() {
 
   // 加载选中会话的消息
   useEffect(() => {
+    if (isStreaming) {
+      return;
+    }
     if (currentConversationId) {
       if (skipNextLoadRef.current) {
         skipNextLoadRef.current = false;
@@ -169,7 +172,7 @@ export default function Agent() {
       // 如果没有选中会话，清空消息
       dispatch(setMessages([]));
     }
-  }, [currentConversationId, conversations, dispatch]);
+  }, [currentConversationId, conversations, dispatch, isStreaming]);
 
   // 发送消息
   const handleSendMessage = async () => {
@@ -553,67 +556,55 @@ export default function Agent() {
               focus-within:scale-[1.02]
               focus-within:border-teal-200/50
             ">
-              {/* 输入框 */}
-              <div className="flex items-end gap-2 px-2">
-                <button className="
-                  p-3 rounded-full 
-                  text-slate-400 hover:text-teal-500 
-                  bg-transparent hover:bg-teal-50/80
-                  transition-all duration-200
-                  hover:scale-110
-                  active:scale-95
-                ">
-                  <Paperclip size={20} />
-                </button>
-                <textarea
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
-                  placeholder="Ask anything..."
+              <div className="pointer-events-none absolute inset-0 rounded-[2.5rem] ring-1 ring-teal-200/50 shadow-[0_0_18px_rgba(45,212,191,0.22)]" />
+              <div className="pointer-events-none absolute inset-[2px] rounded-[2.4rem] border border-white/40 opacity-70" />
+
+              <div className="relative z-10 flex flex-col gap-2">
+                {/* 输入框 */}
+                <div className="flex items-end gap-2 px-2">
+                  <button className="
+                    p-3 rounded-full 
+                    text-slate-400 hover:text-teal-500 
+                    bg-transparent hover:bg-teal-50/80
+                    transition-all duration-200
+                    hover:scale-110
+                    active:scale-95
+                  ">
+                    <Paperclip size={20} />
+                  </button>
+                  <textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                    placeholder="Ask anything..."
                   className="
                     flex-1 bg-transparent border-none outline-none resize-none 
-                    py-3 max-h-32 text-slate-700 placeholder:text-slate-400/70 
-                    text-base font-medium
+                    py-3 px-4 max-h-32 text-slate-700 placeholder:text-slate-400/70 
+                    text-base font-medium rounded-[2.5rem]
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/60
+                    focus-visible:ring-offset-2 focus-visible:ring-offset-white/70
+                    focus-visible:rounded-[2.5rem]
                     group-focus-within:text-slate-800
                   "
-                  rows={1}
-                  style={{ minHeight: '48px' }}
-                  disabled={isStreaming}
-                />
-                <button 
-                  onClick={handleSendMessage}
-                  disabled={isStreaming || !inputValue.trim()}
-                  className={`
-                    p-3 rounded-full transition-all duration-300 shadow-md
-                    hover:scale-110 active:scale-95
-                    ${inputValue.trim() && !isStreaming
-                      ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/40 hover:from-teal-600 hover:to-teal-700 hover:shadow-teal-500/60' 
-                      : 'bg-slate-100 text-slate-300 shadow-transparent cursor-default'}
-                  `}
-                >
-                  <Send size={18} />
-                </button>
-              </div>
-
-              {/* 底部工具栏 */}
-              <div className="
-                flex justify-between items-center px-4 pb-1 pl-14
-                border-t border-white/20
-                pt-2
-              ">
-                <div className="relative">
-                  {/* 可以在这里添加模型选择等功能 */}
+                    rows={1}
+                    style={{ minHeight: '48px' }}
+                    disabled={isStreaming}
+                  />
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={isStreaming || !inputValue.trim()}
+                    className={`
+                      p-3 rounded-full transition-all duration-300 shadow-md
+                      hover:scale-110 active:scale-95
+                      ${inputValue.trim() && !isStreaming
+                        ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/40 hover:from-teal-600 hover:to-teal-700 hover:shadow-teal-500/60' 
+                        : 'bg-slate-100 text-slate-300 shadow-transparent cursor-default'}
+                    `}
+                  >
+                    <Send size={18} />
+                  </button>
                 </div>
 
-                <div className="flex items-center gap-1">
-                  <span className="
-                    text-[10px] text-slate-400 font-mono tracking-tighter 
-                    group-hover:text-teal-500
-                    transition-colors duration-200
-                  ">
-                    AGENT v1.0
-                  </span>
-                </div>
               </div>
             </div>
           </div>

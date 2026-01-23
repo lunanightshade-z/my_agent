@@ -203,11 +203,6 @@ const InputContainer = ({ onSend, disabled = false }) => {
             </button>
           </div>
 
-          {/* 底部提示 */}
-          <div className={styles.footer}>
-            Stable Connection • Layer 4
-          </div>
-
           {/* 底部光效 */}
           <div className={styles.glowEffect} />
         </div>
