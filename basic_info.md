@@ -15,6 +15,8 @@ docker compose up -d --build
 docker logs -f ai_agent_api --tail 100
 
 
+# github
+git add . && git commit -m "backup" && git push
 
 
 
