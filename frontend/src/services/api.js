@@ -81,21 +81,25 @@ export const updateConversationTitle = async (conversationId, title) => {
  * 发送聊天消息（流式）
  * 使用 fetch 处理 SSE 流式响应
  */
-export const sendMessageStream = (conversationId, message, thinkingEnabled, onThinking, onChunk, onDone, onError) => {
+export const sendMessageStream = (conversationId, message, thinkingEnabled, modelProvider, onThinking, onChunk, onDone, onError) => {
   // 使用 fetch 发送 POST 请求，然后处理流式响应
   const url = `${API_BASE_URL}/chat/stream`;
   
   let buffer = ''; // 用于累积不完整的数据块
+  let finished = false; // 防止 done 重复触发导致状态错乱
+  let reader = null;
   
   fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
+    cache: 'no-store',
     body: JSON.stringify({
       conversation_id: conversationId,
       message: message,
       thinking_enabled: thinkingEnabled,
+      model_provider: modelProvider || 'kimi', // 默认使用 kimi
     }),
   })
     .then(response => {
@@ -109,20 +113,24 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
         throw new Error('响应体为空');
       }
       
-      const reader = response.body.getReader();
+      reader = response.body.getReader();
       const decoder = new TextDecoder();
       
       // 递归读取流
       const readStream = () => {
         reader.read()
           .then(({ done, value }) => {
+            if (finished) return;
             if (done) {
               // 处理剩余的缓冲区数据
               if (buffer.trim()) {
                 processBuffer(buffer);
                 buffer = '';
               }
-              onDone();
+              if (!finished) {
+                finished = true;
+                onDone();
+              }
               return;
             }
             
@@ -145,7 +153,10 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
           })
           .catch(error => {
             console.error('读取流失败:', error);
-            onError(error.message || '读取流失败');
+            if (!finished) {
+              finished = true;
+              onError(error.message || '读取流失败');
+            }
           });
       };
       
@@ -154,6 +165,7 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
         const lines = data.split('\n');
         
         lines.forEach(line => {
+          if (finished) return;
           line = line.trim();
           if (!line) return;
           
@@ -172,10 +184,15 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
                 onChunk(parsed.content);
               } else if (parsed.type === 'done') {
                 // 完成信号
+                finished = true;
                 onDone();
+                // 主动关闭读取，避免 nginx/连接未及时关闭导致浏览器一直 pending
+                try { reader?.cancel(); } catch (_) {}
               } else if (parsed.type === 'error') {
                 // 错误信息
+                finished = true;
                 onError(parsed.content || parsed.error || '未知错误');
+                try { reader?.cancel(); } catch (_) {}
               }
             } catch (e) {
               console.error('解析 SSE 数据失败:', e, '原始数据:', jsonStr);
@@ -189,7 +206,10 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, onTh
     })
     .catch(error => {
       console.error('请求失败:', error);
-      onError(error.message || '请求失败');
+      if (!finished) {
+        finished = true;
+        onError(error.message || '请求失败');
+      }
     });
 };
 

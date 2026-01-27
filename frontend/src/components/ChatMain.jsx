@@ -8,6 +8,7 @@ import { MessageCircle, Loader } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MessageBubble from './MessageBubble';
 import InputBox from './InputBox';
+import ModelSelector from './ModelSelector';
 import {
   addUserMessage,
   startStreaming,
@@ -22,7 +23,7 @@ import { sendMessageStream, generateConversationTitle } from '../services/api';
 
 const ChatMain = () => {
   const dispatch = useDispatch();
-  const { currentConversationId, messages, isStreaming, isLoading, thinkingEnabled } = useSelector(
+  const { currentConversationId, messages, isStreaming, isLoading, thinkingEnabled, modelProvider } = useSelector(
     (state) => state.chat
   );
   const messagesEndRef = useRef(null);
@@ -61,6 +62,7 @@ const ChatMain = () => {
       currentConversationId,
       message,
       thinkingEnabled,
+      modelProvider,
       // onThinking - 思考过程
       (thinking) => {
         dispatch(appendStreamingThinking(thinking));
@@ -128,6 +130,7 @@ const ChatMain = () => {
       currentConversationId,
       userMessage,
       thinkingEnabled,
+      modelProvider,
       (thinking) => dispatch(appendStreamingThinking(thinking)),
       (content) => dispatch(appendStreamingContent(content)),
       () => dispatch(endStreaming()),
@@ -159,6 +162,7 @@ const ChatMain = () => {
       currentConversationId,
       newContent,
       thinkingEnabled,
+      modelProvider,
       (thinking) => dispatch(appendStreamingThinking(thinking)),
       (content) => dispatch(appendStreamingContent(content)),
       () => dispatch(endStreaming()),
@@ -250,8 +254,18 @@ const ChatMain = () => {
         </div>
       </div>
 
-      {/* 输入框 */}
-      <InputBox onSend={handleSendMessage} disabled={isStreaming} />
+      {/* 输入区（模型选择器放在输入框上方） */}
+      <div className="px-6 pb-6">
+        <div className="max-w-4xl mx-auto space-y-3">
+          {currentConversationId && (
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">模型</div>
+              <ModelSelector />
+            </div>
+          )}
+          <InputBox onSend={handleSendMessage} disabled={isStreaming} />
+        </div>
+      </div>
     </div>
   );
 };

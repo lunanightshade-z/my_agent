@@ -24,7 +24,7 @@ import styles from './ChatArea.module.css';
 const ChatArea = () => {
   const dispatch = useDispatch();
   const theme = useTheme();
-  const { currentConversationId, messages, isStreaming, isLoading, thinkingEnabled } = useSelector(
+  const { currentConversationId, messages, isStreaming, isLoading, thinkingEnabled, modelProvider } = useSelector(
     state => state.chat
   );
   const messagesEndRef = useRef(null);
@@ -59,6 +59,7 @@ const ChatArea = () => {
       currentConversationId,
       message,
       thinkingEnabled,
+      modelProvider || 'kimi',
       (thinking) => {
         dispatch(appendStreamingThinking(thinking));
       },
@@ -118,6 +119,7 @@ const ChatArea = () => {
       currentConversationId,
       userMessage,
       thinkingEnabled,
+      modelProvider || 'kimi',
       (thinking) => dispatch(appendStreamingThinking(thinking)),
       (content) => dispatch(appendStreamingContent(content)),
       () => dispatch(endStreaming()),
@@ -148,6 +150,7 @@ const ChatArea = () => {
       currentConversationId,
       newContent,
       thinkingEnabled,
+      modelProvider || 'kimi',
       (thinking) => dispatch(appendStreamingThinking(thinking)),
       (content) => dispatch(appendStreamingContent(content)),
       () => dispatch(endStreaming()),

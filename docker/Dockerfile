@@ -9,6 +9,19 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# 配置阿里云 Debian 镜像源（加速 apt-get）
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
+    sed -i 's|security.debian.org/debian-security|mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list.d/debian.sources || \
+    (echo "deb https://mirrors.aliyun.com/debian/ bookworm main" > /etc/apt/sources.list && \
+     echo "deb https://mirrors.aliyun.com/debian/ bookworm-updates main" >> /etc/apt/sources.list && \
+     echo "deb https://mirrors.aliyun.com/debian-security/ bookworm-security main" >> /etc/apt/sources.list)
+
+# 安装系统依赖（提前执行，利用Docker缓存）
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends cron && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # 配置国内pip镜像源加速
 RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple && \
     pip config set global.extra-index-url "https://pypi.tuna.tsinghua.edu.cn/simple" && \
@@ -18,22 +31,16 @@ RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple && \
 # 复制依赖文件
 COPY backend/requirements.txt .
 
-# 安装依赖
+# 安装Python依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制应用代码
+# 创建data目录用于存储缓存和数据库（提前创建，利用缓存）
+RUN mkdir -p /app/data /app/logs
+
+# 复制应用代码（放在最后，代码变更时只重建这一层）
 COPY backend/app/ ./app/
 COPY backend/agents/ ./agents/
 COPY backend/tools/ ./tools/
-
-# 安装cron和必要的工具
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends cron && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# 创建data目录用于存储缓存和数据库
-RUN mkdir -p /app/data /app/logs
 
 # 复制crontab文件和启动脚本
 COPY docker/crontab /etc/cron.d/rss-cache

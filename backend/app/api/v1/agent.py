@@ -1,15 +1,17 @@
 """
 智能体 API 端点
 """
-from fastapi import APIRouter, Depends, Request, Response, HTTPException
+from fastapi import APIRouter, Depends, Request, Response, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse, JSONResponse
 import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 from app.api.schemas import ChatRequest
 from app.services.agent_service import AgentService
 from app.dependencies import get_agent_service, get_or_create_user_id
+from app.utils.file_storage import save_upload_bytes, list_uploads
 from app.infrastructure.logging.setup import get_logger
 
 logger = get_logger(__name__)
@@ -57,6 +59,63 @@ async def agent_chat_stream(
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no"  # 禁用 Nginx 缓冲
+        }
+    )
+
+
+@router.post("/uploads")
+async def upload_document(
+    request: Request,
+    response: Response,
+    file: UploadFile = File(...),
+    conversation_id: Optional[int] = Form(None)
+):
+    """
+    上传文档（PDF/CSV/TXT/MD）
+    返回file_id用于后续工具调用
+    """
+    user_id = get_or_create_user_id(request, response)
+    filename = file.filename or "uploaded_file"
+    content = await file.read()
+    await file.close()
+
+    try:
+        metadata = save_upload_bytes(
+            original_filename=filename,
+            content=content,
+            content_type=file.content_type or "",
+            user_id=user_id,
+            conversation_id=conversation_id
+        )
+        return JSONResponse(
+            {
+                "success": True,
+                "message": "上传成功",
+                "data": metadata
+            }
+        )
+    except ValueError as e:
+        logger.warning("upload_validation_failed", filename=filename, error=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("upload_failed", filename=filename, error=str(e))
+        raise HTTPException(status_code=500, detail="上传失败，请稍后重试")
+
+
+@router.get("/uploads")
+async def list_user_uploads(
+    request: Request,
+    response: Response
+):
+    """
+    获取当前用户上传记录
+    """
+    user_id = get_or_create_user_id(request, response)
+    uploads = list_uploads(user_id)
+    return JSONResponse(
+        {
+            "success": True,
+            "data": uploads
         }
     )
 

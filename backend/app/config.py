@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 1.0
     LLM_MAX_TOKENS: int = 30000
     
+    # OpenRouter 配置（支持 Kimi 等模型）
+    OPENROUTER_API_KEY: str
+    KIMI_MODEL: str = "moonshotai/kimi-k2.5"
+    
     # ==================== 数据库配置 ====================
     DATABASE_URL: str = "sqlite:///./chat_history.db"
     DB_POOL_SIZE: int = 20

@@ -14,6 +14,7 @@ const chatSlice = createSlice({
     messages: [],                         // 当前会话的消息列表
     isStreaming: false,                   // 是否正在接收流式响应
     thinkingEnabled: false,               // thinking 模式开关
+    modelProvider: 'kimi',                // 模型提供商（默认 kimi）
     streamingContent: '',                 // 流式接收中的内容
     streamingThinking: '',                // 流式接收中的思考过程
     isThinking: false,                    // 是否正在思考阶段
@@ -216,6 +217,11 @@ const chatSlice = createSlice({
       state.thinkingEnabled = action.payload;
     },
     
+    // 设置模型提供商
+    setModelProvider: (state, action) => {
+      state.modelProvider = action.payload;
+    },
+    
     // 设置加载状态
     setLoading: (state, action) => {
       state.isLoading = action.payload;
@@ -297,6 +303,7 @@ export const {
   endStreaming,
   toggleThinking,
   setThinking,
+  setModelProvider,
   setLoading,
   setError,
   clearError,

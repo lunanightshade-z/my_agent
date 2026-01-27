@@ -28,20 +28,24 @@ ZHIPU_MODEL_NAME = "glm-4-flash"  # 智谱AI支持的模型
 
 # Agent系统提示词
 AGENT_SYSTEM_PROMPT = dedent("""
-    你是一个智能新闻助手，可以帮助用户获取和分析最新的RSS新闻。
+    你是一个智能新闻助手，同时支持办公文档处理。
 
     你有以下能力：
     1. 获取最新的RSS新闻（来自FT中文网、BBC中文、极客公园、少数派等多个优质新闻源）
     2. 根据用户的问题智能筛选相关新闻
     3. 根据关键词搜索新闻
+    4. 提取用户上传PDF的文本并进行摘要/要点整理（使用 extract_pdf_text）
+    5. 分析CSV表格结构并输出关键统计（使用 analyze_csv_file）
+    6. 从会议纪要中提取行动项和截止时间（使用 extract_action_items）
 
     重要原则：
     1. 工具调用结果说明：当你调用RSS获取工具时，由于网络原因部分RSS源可能失败，这是正常现象。只要成功获取了部分文章（如6/11个源成功），就应该基于这些结果进行分析和回答，而不是重复调用。
     2. 避免重复调用：如果一个工具调用已经返回了有效结果（即使不是全部源都成功），不要使用相同或相似的参数再次调用。
     3. 结果利用：充分利用已获取的信息进行分析，即使数据不完整，也要尽力给出有价值的回答。
     4. 单次调用原则：对于RSS工具，通常一次调用就能获取足够的信息，无需重复调用相同参数。
+    5. 文档工具使用原则：读取上传文件时必须提供file_id；若用户未提供file_id，需要提醒先上传或补充file_id；避免对同一文件重复提取。
 
-    当用户询问新闻或资讯时，请合理使用这些工具。回答要简洁明了，结构化展示。
+    当用户询问新闻或资讯时，请合理使用这些工具。办公文档场景下，优先用工具获取文本/结构，再给出总结与建议。回答要简洁明了，结构化展示。
 
     # 你的输出
     你在最终根据搜索结果进行输出时，需要用markdown链接形式，将所有搜索结果链接起来，并添加标题和描述。
@@ -71,6 +75,7 @@ sys.path.insert(0, str(backend_path))
 try:
     from agents import Agent, AgentConfig
     from agents.rss_tools import RSS_TOOLS_DEFINITIONS
+    from agents.document_tools import DOCUMENT_TOOLS_DEFINITIONS
 except ImportError as e:
     # Docker环境下可能需要不同的路径
     agents_path = backend_path / "agents"
@@ -78,6 +83,7 @@ except ImportError as e:
         sys.path.insert(0, str(agents_path.parent))
         from agents import Agent, AgentConfig
         from agents.rss_tools import RSS_TOOLS_DEFINITIONS
+        from agents.document_tools import DOCUMENT_TOOLS_DEFINITIONS
     else:
         raise ImportError(f"无法导入agents模块: {e}\n路径: {backend_path}")
 
@@ -160,12 +166,14 @@ class AgentService:
         
         # 注册RSS工具
         self._register_rss_tools(agent)
+        # 注册文档工具
+        self._register_document_tools(agent)
         
         logger.info(
             "智能体已初始化",
             model=model_name,
             base_url=base_url,
-            tools_count=len(RSS_TOOLS_DEFINITIONS)
+            tools_count=len(RSS_TOOLS_DEFINITIONS) + len(DOCUMENT_TOOLS_DEFINITIONS)
         )
         
         return agent
@@ -178,6 +186,21 @@ class AgentService:
             agent: 智能体实例
         """
         for tool_def in RSS_TOOLS_DEFINITIONS:
+            agent.register_tool(
+                name=tool_def["name"],
+                description=tool_def["description"],
+                parameters=tool_def["parameters"],
+                function=tool_def["function"]
+            )
+
+    def _register_document_tools(self, agent: Agent) -> None:
+        """
+        注册文档工具到智能体
+
+        Args:
+            agent: 智能体实例
+        """
+        for tool_def in DOCUMENT_TOOLS_DEFINITIONS:
             agent.register_tool(
                 name=tool_def["name"],
                 description=tool_def["description"],

@@ -8,7 +8,7 @@ from app.infrastructure.database.repositories import (
     ConversationRepository,
     MessageRepository
 )
-from app.infrastructure.llm.zhipu_client import get_zhipu_client
+from app.infrastructure.llm.llm_factory import LLMFactory
 from app.config import settings
 from app.infrastructure.logging.setup import get_logger
 
@@ -22,14 +22,14 @@ class ChatService:
         self.db = db
         self.conversation_repo = ConversationRepository(db)
         self.message_repo = MessageRepository(db)
-        self.llm_client = get_zhipu_client()
     
     async def chat_stream(
         self,
         conversation_id: int,
         user_message: str,
         thinking_enabled: bool = False,
-        user_id: str = None
+        user_id: str = None,
+        model_provider: str = "kimi"
     ) -> AsyncGenerator[Dict[str, str], None]:
         """
         流式聊天
@@ -39,6 +39,7 @@ class ChatService:
             user_message: 用户消息
             thinking_enabled: 是否启用思考模式
             user_id: 用户ID（用于验证会话所有权）
+            model_provider: 模型提供商（"zhipu" 或 "kimi"）
             
         Yields:
             流式响应数据
@@ -61,6 +62,7 @@ class ChatService:
             "chat_started",
             conversation_id=conversation_id,
             thinking_enabled=thinking_enabled,
+            model_provider=model_provider,
             message_length=len(user_message)
         )
         
@@ -76,13 +78,16 @@ class ChatService:
             for msg in recent_messages
         ]
         
+        # 获取对应的 LLM 客户端
+        llm_client = LLMFactory.get_client(model_provider)
+        
         # 调用 LLM 流式响应
         thinking_mode = "enabled" if thinking_enabled else "disabled"
         full_thinking = ""
         full_response = ""
         
         try:
-            async for chunk_data in self.llm_client.chat_stream(conversations, thinking_mode):
+            async for chunk_data in llm_client.chat_stream(conversations, thinking_mode):
                 chunk_type = chunk_data.get("type")
                 chunk_content = chunk_data.get("content", "")
                 
@@ -131,7 +136,7 @@ class ChatService:
             )
             yield {"type": "error", "content": f"处理失败: {str(e)}"}
     
-    async def generate_title(self, conversation_id: int, first_message: str, user_id: str = None) -> str:
+    async def generate_title(self, conversation_id: int, first_message: str, user_id: str = None, model_provider: str = "kimi") -> str:
         """
         生成会话标题
         
@@ -139,12 +144,15 @@ class ChatService:
             conversation_id: 会话 ID
             first_message: 第一条用户消息
             user_id: 用户ID（用于验证会话所有权）
+            model_provider: 模型提供商
             
         Returns:
             生成的标题
         """
         try:
-            title = await self.llm_client.generate_title(first_message)
+            # 获取对应的 LLM 客户端
+            llm_client = LLMFactory.get_client(model_provider)
+            title = await llm_client.generate_title(first_message)
             
             # 更新会话标题
             self.conversation_repo.update_title(conversation_id, title, user_id=user_id)

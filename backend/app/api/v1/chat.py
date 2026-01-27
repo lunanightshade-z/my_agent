@@ -34,7 +34,8 @@ async def chat_stream(
                 conversation_id=chat_request.conversation_id,
                 user_message=chat_request.message,
                 thinking_enabled=chat_request.thinking_enabled,
-                user_id=user_id
+                user_id=user_id,
+                model_provider=chat_request.model_provider
             ):
                 # 将数据编码为 JSON 并发送
                 data = json.dumps(chunk_data, ensure_ascii=False)

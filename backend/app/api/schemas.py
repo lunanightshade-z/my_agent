@@ -57,9 +57,13 @@ class MessageList(BaseModel):
 
 class ChatRequest(BaseModel):
     """聊天请求模型"""
+    
+    model_config = {"protected_namespaces": ()}  # 允许使用 model_ 前缀
+    
     conversation_id: int = Field(..., description="会话ID")
     message: str = Field(..., description="用户消息内容")
     thinking_enabled: bool = Field(default=False, description="是否启用 thinking 模式")
+    model_provider: str = Field(default="kimi", description="模型提供商（zhipu 或 kimi）")
 
 
 class TitleGenerationRequest(BaseModel):

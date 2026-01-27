@@ -11,6 +11,7 @@ import { cn } from '../../styles/utils.js';
 import ParticleBackground from '../ui/ParticleBackground.jsx';
 import ChatArea from '../chat/ChatArea/ChatArea.jsx';
 import InputContainer from '../chat/InputContainer/InputContainer.jsx';
+import ModelSelector from '../ModelSelector.jsx';
 import { ThemeProvider } from '../shared/ThemeProvider';
 import { chatTheme } from '../../styles/themes';
 import Button from '../ui/Button.jsx';
@@ -42,7 +43,7 @@ const AppLayout = ({ children }) => {
   const showMagicNavbar = !isChatPage;
 
   // 所有hooks必须在条件返回之前调用
-  const { thinkingEnabled, currentConversationId, messages, isStreaming, conversations } = useSelector(
+  const { thinkingEnabled, currentConversationId, messages, isStreaming, conversations, modelProvider } = useSelector(
     (state) => state.chat
   );
   
@@ -188,6 +189,7 @@ const AppLayout = ({ children }) => {
       conversationId,
       message,
       thinkingEnabled,
+      modelProvider || 'kimi',
       (thinking) => dispatch(appendStreamingThinking(thinking)),
       (content) => dispatch(appendStreamingContent(content)),
       async () => {
@@ -371,6 +373,15 @@ const AppLayout = ({ children }) => {
 
           {/* --- INPUT ZONE (Sticky Bottom) --- */}
           <div className="absolute bottom-0 left-0 right-0 p-6 z-30">
+            {/* 模型选择器 - 放在输入框上方 */}
+            {currentConversationId && (
+              <div className="mb-4 flex items-center justify-end">
+                <div className="flex items-center gap-3 text-xs font-tech text-slate-400">
+                  <span>MODEL:</span>
+                  <ModelSelector />
+                </div>
+              </div>
+            )}
             <InputContainer
               onSend={handleSendMessage}
               disabled={isStreaming}
