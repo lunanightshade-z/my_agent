@@ -1,97 +1,25 @@
 /**
  * Agent 模型选择器组件
  * 专门为 Agent 页面设计，支持工具调用的模型
+ * 使用配置文件管理模型列表
  */
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setModelProvider } from '../store/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Zap, ChevronDown, Brain, Rocket, Gem, Bot } from 'lucide-react';
+import { ChevronDown, Bot } from 'lucide-react';
+import { AGENT_MODELS, getAgentDefaultModel, findModelById } from '../config/models';
 
 const AgentModelSelector = () => {
   const dispatch = useDispatch();
   const { modelProvider, isStreaming } = useSelector((state) => state.chat);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Agent 支持工具调用的模型列表
-  const models = [
-    // Qwen 通义千问 (自建/本地部署) - 推荐，性能强大
-    {
-      id: 'qwen3-235b',
-      name: 'Qwen 235B',
-      provider: 'qwen',
-      icon: Brain,
-      description: 'Qwen3-235B (自建推荐)',
-      color: 'from-indigo-500 to-purple-600',
-      category: 'Qwen',
-      supportsTools: true,
-    },
-    // 智谱模型 (支持工具调用)
-    {
-      id: 'zhipu',
-      name: 'GLM-4 Flash',
-      provider: 'zhipu',
-      icon: Zap,
-      description: '智谱 GLM-4-Flash',
-      color: 'from-blue-500 to-cyan-500',
-      category: '智谱',
-      supportsTools: true,
-    },
-    // OpenRouter 模型 (支持工具调用)
-    {
-      id: 'deepseek/deepseek-v3.2',
-      name: 'DeepSeek V3.2',
-      provider: 'openrouter',
-      icon: Brain,
-      description: 'DeepSeek V3.2',
-      color: 'from-green-500 to-emerald-500',
-      category: 'OpenRouter',
-      supportsTools: true,
-    },
-    {
-      id: 'moonshotai/kimi-k2.5',
-      name: 'Kimi K2.5',
-      provider: 'openrouter',
-      icon: Sparkles,
-      description: 'Moonshot AI Kimi',
-      color: 'from-purple-500 to-pink-500',
-      category: 'OpenRouter',
-      supportsTools: true,
-    },
-    {
-      id: 'z-ai/glm-4.7-flash',
-      name: 'GLM-4.7 Flash',
-      provider: 'openrouter',
-      icon: Zap,
-      description: 'Z-AI GLM-4.7 Flash',
-      color: 'from-blue-400 to-indigo-500',
-      category: 'OpenRouter',
-      supportsTools: true,
-    },
-    {
-      id: 'bytedance-seed/seed-1.6-flash',
-      name: 'Seed 1.6',
-      provider: 'openrouter',
-      icon: Rocket,
-      description: 'ByteDance Seed 1.6 Flash',
-      color: 'from-orange-500 to-red-500',
-      category: 'OpenRouter',
-      supportsTools: true,
-    },
-    {
-      id: 'google/gemini-3-flash-preview',
-      name: 'Gemini 3 Flash',
-      provider: 'openrouter',
-      icon: Gem,
-      description: 'Google Gemini 3 Flash',
-      color: 'from-yellow-500 to-amber-500',
-      category: 'OpenRouter',
-      supportsTools: true,
-    },
-  ];
+  // 从配置文件获取模型列表
+  const models = AGENT_MODELS;
 
-  // 默认 Qwen 235B，自建模型性能强大
-  const currentModel = models.find(m => m.id === modelProvider) || models[0];
+  // 查找当前模型，如果找不到则使用默认模型
+  const currentModel = findModelById(modelProvider, models) || getAgentDefaultModel();
 
   const handleModelChange = (modelId) => {
     if (!isStreaming) {

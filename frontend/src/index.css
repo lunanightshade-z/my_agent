@@ -141,24 +141,35 @@ input:disabled {
 }
 
 /* ======================== 魔法主题样式 (Home 页面) ======================== */
-/* 液态流光背景 */
+/* 性能优化版：简化渐变层次 */
 .liquid-bg {
-  background: linear-gradient(45deg, #1a103c, #0d0620, #251845);
-  background-size: 400% 400%;
-  animation: gradientBG 15s ease infinite;
+  background: 
+    /* 减少到2层渐变 */
+    radial-gradient(ellipse at 30% 40%, rgba(100, 150, 255, 0.12) 0%, transparent 60%),
+    linear-gradient(135deg, #0a0118 0%, #16213e 50%, #05000a 100%);
+  background-size: 
+    150% 150%,
+    100% 100%;
+  animation: nebula-drift 25s ease-in-out infinite;
 }
 
-@keyframes gradientBG {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* 简化动画（单一动画） */
+@keyframes nebula-drift {
+  0%, 100% { 
+    background-position: 0% 0%, center;
+  }
+  50% { 
+    background-position: 100% 100%, center;
+  }
 }
 
-/* 羊皮纸纹理覆盖层 */
+/* 性能优化：简化星尘覆盖层 */
 .parchment-texture {
-  background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
-  mix-blend-mode: overlay;
-  opacity: 0.3;
+  background: 
+    radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mix-blend-mode: screen;
+  opacity: 0.6;
   pointer-events: none;
 }
 
@@ -176,22 +187,24 @@ input:disabled {
   transform: scale(1);
 }
 
-/* 玻璃拟态卡片 - 魔法主题 */
+/* 性能优化：简化玻璃卡片 */
 .glass-card-magic {
-  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.4s ease;
   transform-style: preserve-3d;
 }
 
 .glass-card-magic:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 215, 0, 0.4);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-  transform: rotateY(5deg) rotateX(5deg) translateZ(20px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(100, 200, 255, 0.3);
+  box-shadow: 
+    0 12px 40px 0 rgba(100, 200, 255, 0.15);
+  transform: translateY(-5px);
 }
 
 /* 3D 透视容器 */
@@ -199,26 +212,31 @@ input:disabled {
   perspective: 1000px;
 }
 
-/* 悬浮粒子动画 */
+/* 性能优化：简化粒子动画 */
 @keyframes float-particle {
   0% { 
-    transform: translateY(0px) translateX(0px); 
+    transform: translateY(0px) scale(0); 
     opacity: 0; 
   }
-  50% { 
-    opacity: 0.8; 
+  10% {
+    opacity: 0.8;
+    transform: translateY(-10px) scale(1);
+  }
+  90% {
+    opacity: 0.3;
+    transform: translateY(-90px) scale(0.8);
   }
   100% { 
-    transform: translateY(-100px) translateX(20px); 
+    transform: translateY(-100px) scale(0); 
     opacity: 0; 
   }
 }
 
 .animate-float-particle {
-  animation: float-particle 10s linear infinite;
+  animation: float-particle 12s ease-out infinite;
 }
 
-/* 流光特效 */
+/* 性能优化：简化流光特效 */
 @keyframes shine {
   0% {
     left: -100%;
@@ -229,7 +247,7 @@ input:disabled {
 }
 
 .animate-shine {
-  animation: shine 2s ease-in-out;
+  animation: shine 2s ease-out;
 }
 
 /* 魔法字体类 */
@@ -246,4 +264,118 @@ input:disabled {
   width: 100%;
   height: 100%;
   /* 主题变量由 ThemeProvider 动态注入 */
+}
+
+/* ======================== 四级设计：浮动导航栏 ======================== */
+.cosmic-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: 
+    linear-gradient(180deg, 
+      rgba(10, 1, 24, 0.85) 0%, 
+      rgba(10, 1, 24, 0.5) 100%
+    );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid transparent;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 滚动时的样式 */
+.cosmic-nav.scrolled {
+  background: 
+    linear-gradient(180deg, 
+      rgba(10, 1, 24, 0.95) 0%, 
+      rgba(10, 1, 24, 0.8) 100%
+    );
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(100, 200, 255, 0.1);
+  border-bottom-color: rgba(100, 200, 255, 0.2);
+}
+
+/* 能量线条装饰 */
+.cosmic-nav::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    rgba(100, 200, 255, 0.6) 25%,
+    rgba(255, 100, 200, 0.6) 50%,
+    rgba(255, 215, 0, 0.6) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: energy-flow 3s linear infinite;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.cosmic-nav.scrolled::before {
+  opacity: 1;
+}
+
+@keyframes energy-flow {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 导航项悬停效果 */
+.nav-item-cosmic {
+  position: relative;
+  padding: 0.5rem 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.nav-item-cosmic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    rgba(100, 200, 255, 0.1), 
+    rgba(255, 100, 200, 0.1)
+  );
+  border-radius: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.nav-item-cosmic:hover {
+  color: rgba(255, 255, 255, 1);
+  text-shadow: 0 0 10px rgba(100, 200, 255, 0.5);
+}
+
+.nav-item-cosmic:hover::before {
+  opacity: 1;
+}
+
+/* Logo 光晕效果 */
+.logo-glow {
+  filter: drop-shadow(0 0 10px rgba(100, 200, 255, 0.3));
+  transition: filter 0.3s ease;
+}
+
+.logo-glow:hover {
+  filter: drop-shadow(0 0 20px rgba(100, 200, 255, 0.6));
+  animation: logo-pulse 2s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(100, 200, 255, 0.3));
+  }
+  50% { 
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 25px rgba(100, 200, 255, 0.8));
+  }
 }

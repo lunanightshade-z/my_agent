@@ -16,8 +16,8 @@ import { ThemeProvider } from '../shared/ThemeProvider';
 import { chatTheme } from '../../styles/themes';
 import Button from '../ui/Button.jsx';
 import ChatHistory from '../ChatHistory.jsx';
-import MagicNavbar from '../MagicNavbar.jsx';
 import QuickActions from '../QuickActions.jsx';
+import { CHAT_DEFAULT_MODEL } from '../../config/models';
 import {
   addUserMessage,
   startStreaming,
@@ -48,7 +48,6 @@ const AppLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const isChatPage = location.pathname === '/chat';
-  const showMagicNavbar = !isChatPage;
 
   // 所有hooks必须在条件返回之前调用
   const { thinkingEnabled, currentConversationId, messages, isStreaming, conversations, modelProvider } = useSelector(
@@ -158,8 +157,7 @@ const AppLayout = ({ children }) => {
     const isAgentPage = location.pathname === '/agent';
     return (
       <div className="relative w-full min-h-screen overflow-hidden">
-        {!isAgentPage && showMagicNavbar && <MagicNavbar />}
-        <div className={!isAgentPage && showMagicNavbar ? 'pt-24' : ''}>
+        <div>
           {children}
         </div>
       </div>
@@ -197,7 +195,7 @@ const AppLayout = ({ children }) => {
       conversationId,
       message,
       thinkingEnabled,
-      modelProvider || 'qwen3-235b',
+      modelProvider || CHAT_DEFAULT_MODEL,
       (thinking) => dispatch(appendStreamingThinking(thinking)),
       (content) => dispatch(appendStreamingContent(content)),
       async () => {
@@ -401,21 +399,11 @@ const AppLayout = ({ children }) => {
               </div>
             )}
             
-            {/* 输入框容器包装，包含模型选择器 */}
-            <div className="flex items-end gap-3">
-              {/* 模型选择器 - 放在输入框左侧 */}
-              {currentConversationId && (
-                <div className="flex-shrink-0">
-                  <ModelSelector />
-                </div>
-              )}
-              <div className="flex-1">
-                <InputContainer
-                  onSend={handleSendMessage}
-                  disabled={isStreaming}
-                />
-              </div>
-            </div>
+            {/* 输入框容器 - 模型选择器已集成到 InputContainer 内部 */}
+            <InputContainer
+              onSend={handleSendMessage}
+              disabled={isStreaming}
+            />
           </div>
         </div>
 

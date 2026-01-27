@@ -41,9 +41,7 @@ import { ThemeProvider } from '../components/shared/ThemeProvider';
 import { agentTheme } from '../styles/themes';
 import ToolCallCard from '../components/chat/ToolCallCard/ToolCallCard';
 import AgentModelSelector from '../components/AgentModelSelector';
-
-// Agent 默认模型
-const AGENT_DEFAULT_MODEL = 'qwen3-235b';
+import { AGENT_DEFAULT_MODEL, AGENT_MODELS } from '../config/models';
 import QuickActions from '../components/QuickActions.jsx';
 
 // --- 组件：背景动态流体 ---
@@ -78,8 +76,10 @@ export default function Agent() {
   // 页面挂载时，清空不属于 agent 类型的会话状态，并设置 Agent 默认模型
   useEffect(() => {
     // 设置 Agent 默认模型（如果还没设置过或是 Chat 默认模型）
-    if (!modelProvider || modelProvider === 'moonshotai/kimi-k2.5') {
-      // 如果没有模型或者是 Chat 默认模型（Kimi），切换到 Agent 默认模型（Qwen）
+    // 检查当前模型是否在 Agent 模型列表中，如果不在则切换到 Agent 默认模型
+    const isAgentModel = AGENT_MODELS.some(m => m.id === modelProvider);
+    if (!modelProvider || !isAgentModel) {
+      // 如果没有模型或当前模型不是 Agent 支持的模型，切换到 Agent 默认模型
       dispatch(setModelProvider(AGENT_DEFAULT_MODEL));
     }
     

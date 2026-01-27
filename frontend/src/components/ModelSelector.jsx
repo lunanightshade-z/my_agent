@@ -1,78 +1,25 @@
 /**
  * 模型选择器组件
  * 支持多个模型选择
+ * 使用配置文件管理模型列表
  */
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setModelProvider } from '../store/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Zap, ChevronDown, Brain, Rocket, Gem } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import { CHAT_MODELS, getChatDefaultModel, findModelById } from '../config/models';
 
 const ModelSelector = () => {
   const dispatch = useDispatch();
   const { modelProvider, isStreaming } = useSelector((state) => state.chat);
   const [isOpen, setIsOpen] = useState(false);
 
-  const models = [
-    // 智谱模型
-    {
-      id: 'zhipu',
-      name: 'GLM-4.7',
-      provider: 'zhipu',
-      icon: Zap,
-      description: '智谱 GLM-4.7',
-      color: 'from-blue-500 to-cyan-500',
-      category: '智谱',
-    },
-    // OpenRouter 模型
-    {
-      id: 'moonshotai/kimi-k2.5',
-      name: 'Kimi K2.5',
-      provider: 'openrouter',
-      icon: Sparkles,
-      description: 'Moonshot AI Kimi',
-      color: 'from-purple-500 to-pink-500',
-      category: 'OpenRouter',
-    },
-    {
-      id: 'z-ai/glm-4.7-flash',
-      name: 'GLM-4.7 Flash',
-      provider: 'openrouter',
-      icon: Zap,
-      description: 'Z-AI GLM-4.7 Flash',
-      color: 'from-blue-400 to-indigo-500',
-      category: 'OpenRouter',
-    },
-    {
-      id: 'bytedance-seed/seed-1.6-flash',
-      name: 'Seed 1.6',
-      provider: 'openrouter',
-      icon: Rocket,
-      description: 'ByteDance Seed 1.6 Flash',
-      color: 'from-orange-500 to-red-500',
-      category: 'OpenRouter',
-    },
-    {
-      id: 'deepseek/deepseek-v3.2',
-      name: 'DeepSeek V3.2',
-      provider: 'openrouter',
-      icon: Brain,
-      description: 'DeepSeek V3.2',
-      color: 'from-green-500 to-emerald-500',
-      category: 'OpenRouter',
-    },
-    {
-      id: 'google/gemini-3-flash-preview',
-      name: 'Gemini 3 Flash',
-      provider: 'openrouter',
-      icon: Gem,
-      description: 'Google Gemini 3 Flash',
-      color: 'from-yellow-500 to-amber-500',
-      category: 'OpenRouter',
-    },
-  ];
+  // 从配置文件获取模型列表
+  const models = CHAT_MODELS;
 
-  const currentModel = models.find(m => m.id === modelProvider) || models[1]; // 默认 Kimi
+  // 查找当前模型，如果找不到则使用默认模型
+  const currentModel = findModelById(modelProvider, models) || getChatDefaultModel();
 
   const handleModelChange = (modelId) => {
     if (!isStreaming) {
@@ -117,11 +64,11 @@ const ModelSelector = () => {
       <AnimatePresence>
         {isOpen && !isStreaming && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute bottom-full right-0 mb-2 w-64 bg-[#0a0c10] border border-amber-500/20 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto"
-            style={{ backdropFilter: 'blur(16px)' }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute bottom-full left-0 mb-2 w-64 bg-[#0a0c10]/95 border border-amber-500/30 rounded-lg shadow-2xl z-[9999] max-h-96 overflow-y-auto"
+            style={{ backdropFilter: 'blur(20px)' }}
           >
             {Object.entries(modelsByCategory).map(([category, categoryModels]) => (
               <div key={category} className="p-2">
@@ -166,7 +113,7 @@ const ModelSelector = () => {
       {/* 点击外部关闭菜单 */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-[9998]"
           onClick={() => setIsOpen(false)}
         />
       )}

@@ -4,13 +4,14 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Send, Sparkles, Paperclip, Box } from 'lucide-react';
+import { Send, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../../styles/utils.js';
 import { useTheme } from '../../shared/ThemeProvider';
 import { toggleThinking, addToInputHistory } from '../../../store/store';
 import { Textarea } from '../../ui/Input.jsx';
 import Button from '../../ui/Button.jsx';
+import ModelSelector from '../../ModelSelector.jsx';
 import styles from './InputContainer.module.css';
 
 const SLASH_COMMANDS = [
@@ -145,24 +146,12 @@ const InputContainer = ({ onSend, disabled = false }) => {
         <div className={cn(styles.inputContainer, thinkingEnabled && !disabled && styles.inputContainerActive)}>
           {/* 顶部工具条 */}
           <div className={styles.toolbar}>
+            {/* 左侧：模型选择器 */}
             <div className={styles.toolbarLeft}>
-              <button
-                className={styles.attachButton}
-                disabled={disabled}
-                title="上传文件"
-              >
-                <Paperclip size={18} />
-              </button>
-              <button
-                className={styles.attachButton}
-                disabled={disabled}
-                title="工具箱"
-              >
-                <Box size={18} />
-              </button>
+              <ModelSelector />
             </div>
 
-            {/* Deep Thought Toggle - Mechanical Switch Look */}
+            {/* 右侧：Deep Thought Toggle - Mechanical Switch Look */}
             <div 
               onClick={() => dispatch(toggleThinking())}
               className={cn(styles.deepThoughtToggle, thinkingEnabled && styles.deepThoughtToggleActive)}
