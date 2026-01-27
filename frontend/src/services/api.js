@@ -99,7 +99,7 @@ export const sendMessageStream = (conversationId, message, thinkingEnabled, mode
       conversation_id: conversationId,
       message: message,
       thinking_enabled: thinkingEnabled,
-      model_provider: modelProvider || 'kimi', // 默认使用 kimi
+      model_provider: modelProvider || 'moonshotai/kimi-k2.5', // 默认使用 Kimi
     }),
   })
     .then(response => {
@@ -236,8 +236,17 @@ export const generateRSSCache = async () => {
 /**
  * 发送智能体消息（流式 - 支持工具调用）
  * 使用 fetch 处理 SSE 流式响应
+ * 
+ * @param {number} conversationId - 会话 ID
+ * @param {string} message - 用户消息
+ * @param {string} modelProvider - 模型提供商（如 "moonshotai/kimi-k2.5"）
+ * @param {function} onToolCall - 工具调用回调
+ * @param {function} onToolResult - 工具结果回调
+ * @param {function} onChunk - 内容块回调
+ * @param {function} onDone - 完成回调
+ * @param {function} onError - 错误回调
  */
-export const sendAgentMessageStream = (conversationId, message, onToolCall, onToolResult, onChunk, onDone, onError) => {
+export const sendAgentMessageStream = (conversationId, message, modelProvider, onToolCall, onToolResult, onChunk, onDone, onError) => {
   const url = `${API_BASE_URL}/agent/stream`;
   
   let buffer = '';
@@ -251,6 +260,7 @@ export const sendAgentMessageStream = (conversationId, message, onToolCall, onTo
       conversation_id: conversationId,
       message: message,
       thinking_enabled: false, // 智能体不使用thinking模式
+      model_provider: modelProvider || 'qwen3-235b', // 默认使用 Qwen 235B (自建推荐)
     }),
   })
     .then(response => {

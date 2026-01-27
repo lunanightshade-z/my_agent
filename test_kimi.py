@@ -12,7 +12,7 @@ client = OpenAI(
 )
 # First API call with reasoning
 response = client.chat.completions.create(
-  model="moonshotai/kimi-k2.5",
+  model="deepseek/deepseek-v3.2",
   messages=[
           {
             "role": "user",

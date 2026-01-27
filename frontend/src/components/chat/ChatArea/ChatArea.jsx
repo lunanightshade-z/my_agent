@@ -59,7 +59,7 @@ const ChatArea = () => {
       currentConversationId,
       message,
       thinkingEnabled,
-      modelProvider || 'kimi',
+      modelProvider || 'moonshotai/kimi-k2.5',
       (thinking) => {
         dispatch(appendStreamingThinking(thinking));
       },
@@ -119,7 +119,7 @@ const ChatArea = () => {
       currentConversationId,
       userMessage,
       thinkingEnabled,
-      modelProvider || 'kimi',
+      modelProvider || 'moonshotai/kimi-k2.5',
       (thinking) => dispatch(appendStreamingThinking(thinking)),
       (content) => dispatch(appendStreamingContent(content)),
       () => dispatch(endStreaming()),
@@ -150,7 +150,7 @@ const ChatArea = () => {
       currentConversationId,
       newContent,
       thinkingEnabled,
-      modelProvider || 'kimi',
+      modelProvider || 'moonshotai/kimi-k2.5',
       (thinking) => dispatch(appendStreamingThinking(thinking)),
       (content) => dispatch(appendStreamingContent(content)),
       () => dispatch(endStreaming()),

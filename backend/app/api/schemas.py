@@ -63,7 +63,7 @@ class ChatRequest(BaseModel):
     conversation_id: int = Field(..., description="会话ID")
     message: str = Field(..., description="用户消息内容")
     thinking_enabled: bool = Field(default=False, description="是否启用 thinking 模式")
-    model_provider: str = Field(default="kimi", description="模型提供商（zhipu 或 kimi）")
+    model_provider: str = Field(default="moonshotai/kimi-k2.5", description="模型标识（zhipu 或 openrouter 模型名称）")
 
 
 class TitleGenerationRequest(BaseModel):

@@ -206,9 +206,13 @@ class Agent:
                     logger.info(f"检测到 {len(collected_tool_calls)} 个工具调用")
                     
                     # 构造助手消息（包含工具调用）
+                    # 注意：某些模型（如 Kimi）在工具调用后期望有 content 字段
+                    # 为了兼容性，确保 content 不为 None
+                    assistant_content = ''.join(collected_messages) if collected_messages else ""
+                    
                     assistant_message = {
                         "role": "assistant",
-                        "content": ''.join(collected_messages) if collected_messages else None,
+                        "content": assistant_content,
                         "tool_calls": collected_tool_calls
                     }
                     full_messages.append(assistant_message)

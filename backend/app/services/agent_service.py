@@ -1,12 +1,12 @@
 """
 智能体服务层
-集成Agent工具调用功能
+集成Agent工具调用功能，支持多模型选择
 """
 import os
 import sys
 from pathlib import Path
 from textwrap import dedent
-from typing import AsyncGenerator, Dict, Generator, List, Any
+from typing import AsyncGenerator, Dict, Generator, List, Any, Optional
 
 from sqlalchemy.orm import Session
 
@@ -18,13 +18,9 @@ from app.infrastructure.database.repositories import (
 from app.infrastructure.logging.setup import get_logger
 
 # ==================== 配置常量 ====================
-# Agent模型配置
-AGENT_MODEL_NAME = "qwen3-235b-instruct"  # 默认模型（用于通义千问）
+# Agent 默认配置
 AGENT_MAX_TOOL_ITERATIONS = 10
 AGENT_TEMPERATURE = 0.7
-
-# 智谱AI模型配置（当base_url指向智谱AI时使用）
-ZHIPU_MODEL_NAME = "glm-4-flash"  # 智谱AI支持的模型
 
 # Agent系统提示词
 AGENT_SYSTEM_PROMPT = dedent("""
@@ -58,14 +54,60 @@ AGENT_SYSTEM_PROMPT = dedent("""
     """
 ).strip()
 
-# 环境变量配置键
-ENV_QWEN_API_KEY = "QWEN_API_KEY"
-ENV_QWEN_API_BASE_URL = "QWEN_API_BASE_URL"
-
 # 标题生成配置
 TITLE_MAX_LENGTH = 20
 TITLE_ELLIPSIS = "..."
 DEFAULT_CONVERSATION_TITLE = "智能体对话"
+
+# 支持工具调用的模型配置
+# key: 前端传入的 model_provider 标识符
+# value: {api_base, model_name, api_key_env} - API 配置
+# 注意: 某些模型（如 Kimi K2.5）在工具调用时有已知问题，建议使用其他模型
+AGENT_MODEL_CONFIG = {
+    # Qwen 通义千问 (本地部署/自定义接口) - 从环境变量读取配置
+    "qwen3-235b": {
+        "api_base_env": "QWEN_API_BASE_URL",  # 特殊标记：从环境变量读取 base_url
+        "model_name": "qwen3-235b-instruct",
+        "api_key_env": "QWEN_API_KEY",
+    },
+    # 智谱 AI (直连) - 推荐，工具调用稳定
+    "zhipu": {
+        "api_base": "https://open.bigmodel.cn/api/paas/v4",
+        "model_name": "glm-4-flash",
+        "api_key_env": "ZHIPU_API_KEY",
+    },
+    # OpenRouter 模型（使用 OpenRouter API）
+    # DeepSeek V3.2 - 推荐，工具调用支持良好
+    "deepseek/deepseek-v3.2": {
+        "api_base": "https://openrouter.ai/api/v1",
+        "model_name": "deepseek/deepseek-v3.2",
+        "api_key_env": "OPENROUTER_API_KEY",
+    },
+    # Kimi K2.5 - 注意: 工具调用后续对话可能有兼容性问题
+    "moonshotai/kimi-k2.5": {
+        "api_base": "https://openrouter.ai/api/v1",
+        "model_name": "moonshotai/kimi-k2.5",
+        "api_key_env": "OPENROUTER_API_KEY",
+    },
+    "z-ai/glm-4.7-flash": {
+        "api_base": "https://openrouter.ai/api/v1",
+        "model_name": "z-ai/glm-4.7-flash",
+        "api_key_env": "OPENROUTER_API_KEY",
+    },
+    "bytedance-seed/seed-1.6-flash": {
+        "api_base": "https://openrouter.ai/api/v1",
+        "model_name": "bytedance-seed/seed-1.6-flash",
+        "api_key_env": "OPENROUTER_API_KEY",
+    },
+    "google/gemini-3-flash-preview": {
+        "api_base": "https://openrouter.ai/api/v1",
+        "model_name": "google/gemini-3-flash-preview",
+        "api_key_env": "OPENROUTER_API_KEY",
+    },
+}
+
+# 默认 Agent 模型 - 使用 Qwen 235B，自建模型性能强大
+DEFAULT_AGENT_MODEL = "qwen3-235b"
 
 # ==================== 模块导入 ====================
 # 导入智能体模块 - 修正路径
@@ -90,72 +132,82 @@ except ImportError as e:
 logger = get_logger(__name__)
 
 
-def _detect_model_from_base_url(base_url: str) -> str:
-    """
-    根据base_url自动检测应该使用的模型名称
-    
-    Args:
-        base_url: API基础URL
-        
-    Returns:
-        模型名称
-    """
-    if not base_url:
-        return AGENT_MODEL_NAME
-    
-    # 如果base_url包含智谱AI的域名，使用智谱AI的模型
-    if "bigmodel.cn" in base_url.lower() or "zhipuai" in base_url.lower():
-        logger.info(f"检测到智谱AI API，使用模型: {ZHIPU_MODEL_NAME}")
-        return ZHIPU_MODEL_NAME
-    
-    # 默认使用通义千问模型
-    logger.info(f"使用默认模型: {AGENT_MODEL_NAME}")
-    return AGENT_MODEL_NAME
-
-
 class AgentService:
-    """智能体服务 - 支持工具调用"""
+    """智能体服务 - 支持工具调用和多模型选择"""
     
     def __init__(self, db: Session):
         self.db = db
         self.conversation_repo = ConversationRepository(db)
         self.message_repo = MessageRepository(db)
-        self._agent = None
+        # 使用字典缓存不同模型的 Agent 实例
+        self._agents: Dict[str, Agent] = {}
     
-    def _get_agent(self) -> Agent:
-        """获取或创建智能体实例（单例）"""
-        if self._agent is None:
-            self._agent = self._create_agent()
+    def _get_agent(self, model_provider: str = None) -> Agent:
+        """
+        获取或创建智能体实例（按模型缓存）
         
-        return self._agent
+        Args:
+            model_provider: 模型标识符（如 "moonshotai/kimi-k2.5"）
+            
+        Returns:
+            Agent: 配置好的智能体实例
+        """
+        model_provider = model_provider or DEFAULT_AGENT_MODEL
+        
+        # 检查缓存
+        if model_provider not in self._agents:
+            self._agents[model_provider] = self._create_agent(model_provider)
+        
+        return self._agents[model_provider]
     
-    def _create_agent(self) -> Agent:
+    def _create_agent(self, model_provider: str) -> Agent:
         """
         创建并配置智能体实例
+        
+        Args:
+            model_provider: 模型标识符
         
         Returns:
             Agent: 配置好的智能体实例
             
         Raises:
-            ValueError: 当必需的环境变量未配置时
+            ValueError: 当必需的环境变量未配置或模型不支持时
         """
-        # 从环境变量读取配置
-        api_key = os.getenv(ENV_QWEN_API_KEY)
-        base_url = os.getenv(ENV_QWEN_API_BASE_URL)
+        # 获取模型配置
+        if model_provider not in AGENT_MODEL_CONFIG:
+            # 尝试将未知模型作为 OpenRouter 模型处理
+            logger.warning(f"未知模型 {model_provider}，尝试作为 OpenRouter 模型处理")
+            model_config = {
+                "api_base": "https://openrouter.ai/api/v1",
+                "model_name": model_provider,
+                "api_key_env": "OPENROUTER_API_KEY",
+            }
+        else:
+            model_config = AGENT_MODEL_CONFIG[model_provider]
         
-        if not api_key or not base_url:
+        # 从环境变量读取 API Key
+        api_key = os.getenv(model_config["api_key_env"])
+        if not api_key:
             raise ValueError(
-                f"{ENV_QWEN_API_KEY} 或 {ENV_QWEN_API_BASE_URL} 未配置"
+                f"环境变量 {model_config['api_key_env']} 未配置"
             )
         
-        # 根据base_url自动检测应该使用的模型
-        model_name = _detect_model_from_base_url(base_url)
+        # 获取 API Base URL
+        # 某些模型（如 Qwen）的 base_url 从环境变量读取
+        if "api_base_env" in model_config:
+            api_base = os.getenv(model_config["api_base_env"])
+            if not api_base:
+                raise ValueError(
+                    f"环境变量 {model_config['api_base_env']} 未配置"
+                )
+        else:
+            api_base = model_config["api_base"]
         
         # 创建智能体配置
         config = AgentConfig(
-            model=model_name,
+            model=model_config["model_name"],
             api_key=api_key,
-            base_url=base_url,
+            base_url=api_base,
             system_prompt=AGENT_SYSTEM_PROMPT,
             max_tool_iterations=AGENT_MAX_TOOL_ITERATIONS,
             temperature=AGENT_TEMPERATURE
@@ -171,8 +223,9 @@ class AgentService:
         
         logger.info(
             "智能体已初始化",
-            model=model_name,
-            base_url=base_url,
+            model_provider=model_provider,
+            model_name=model_config["model_name"],
+            api_base=api_base,
             tools_count=len(RSS_TOOLS_DEFINITIONS) + len(DOCUMENT_TOOLS_DEFINITIONS)
         )
         
@@ -212,7 +265,8 @@ class AgentService:
         self,
         conversation_id: int,
         user_message: str,
-        user_id: str = None
+        user_id: str = None,
+        model_provider: str = None
     ) -> AsyncGenerator[Dict[str, str], None]:
         """
         智能体流式聊天
@@ -221,10 +275,14 @@ class AgentService:
             conversation_id: 会话 ID
             user_message: 用户消息
             user_id: 用户ID（用于验证会话所有权）
+            model_provider: 模型标识符（如 "moonshotai/kimi-k2.5"）
             
         Yields:
             流式响应数据
         """
+        # 使用默认模型如果未指定
+        model_provider = model_provider or DEFAULT_AGENT_MODEL
+        
         # 验证会话是否存在且属于当前用户
         conversation = self.conversation_repo.get_by_id(conversation_id, user_id=user_id)
         if not conversation:
@@ -242,6 +300,7 @@ class AgentService:
         logger.info(
             "agent_chat_started",
             conversation_id=conversation_id,
+            model_provider=model_provider,
             message_length=len(user_message)
         )
         
@@ -262,13 +321,14 @@ class AgentService:
         tool_calls_info = []
         
         try:
-            agent = self._get_agent()
+            agent = self._get_agent(model_provider)
             
             for chunk in self._process_agent_stream(
                 agent.chat_stream(messages),
                 tool_calls_info
             ):
                 if chunk.get("type") == "error":
+                    yield chunk
                     return
                 
                 # 只累计文本内容
@@ -289,6 +349,7 @@ class AgentService:
             logger.info(
                 "agent_chat_completed",
                 conversation_id=conversation_id,
+                model_provider=model_provider,
                 response_length=len(full_response),
                 tool_calls_count=len(tool_calls_info)
             )
@@ -297,6 +358,7 @@ class AgentService:
             logger.error(
                 "agent_chat_failed",
                 conversation_id=conversation_id,
+                model_provider=model_provider,
                 error=str(e),
                 error_type=type(e).__name__
             )

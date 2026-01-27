@@ -1,0 +1,67 @@
+[
+  {
+    "model_id": "zhipu",
+    "model_name": "GLM-4.7",
+    "success": false,
+    "has_tool_call": false,
+    "has_tool_result": false,
+    "has_content": false,
+    "error": null,
+    "tool_calls": [],
+    "response_preview": "",
+    "degraded": false,
+    "category": "智谱AI"
+  },
+  {
+    "model_id": "zhipu:glm-4-flash",
+    "model_name": "GLM-4-Flash",
+    "success": false,
+    "has_tool_call": false,
+    "has_tool_result": false,
+    "has_content": false,
+    "error": null,
+    "tool_calls": [],
+    "response_preview": "",
+    "degraded": false,
+    "category": "智谱AI"
+  },
+  {
+    "model_id": "moonshotai/kimi-k2.5",
+    "model_name": "Kimi K2.5",
+    "success": false,
+    "has_tool_call": false,
+    "has_tool_result": false,
+    "has_content": false,
+    "error": null,
+    "tool_calls": [],
+    "response_preview": "",
+    "degraded": false,
+    "category": "OpenRouter"
+  },
+  {
+    "model_id": "deepseek/deepseek-v3.2",
+    "model_name": "DeepSeek V3.2",
+    "success": false,
+    "has_tool_call": false,
+    "has_tool_result": false,
+    "has_content": false,
+    "error": null,
+    "tool_calls": [],
+    "response_preview": "",
+    "degraded": false,
+    "category": "OpenRouter"
+  },
+  {
+    "model_id": "google/gemini-3-flash-preview",
+    "model_name": "Gemini 3 Flash",
+    "success": false,
+    "has_tool_call": false,
+    "has_tool_result": false,
+    "has_content": false,
+    "error": null,
+    "tool_calls": [],
+    "response_preview": "",
+    "degraded": false,
+    "category": "OpenRouter"
+  }
+]

@@ -17,6 +17,7 @@ import { chatTheme } from '../../styles/themes';
 import Button from '../ui/Button.jsx';
 import ChatHistory from '../ChatHistory.jsx';
 import MagicNavbar from '../MagicNavbar.jsx';
+import QuickActions from '../QuickActions.jsx';
 import {
   addUserMessage,
   startStreaming,
@@ -34,6 +35,13 @@ import {
   generateConversationTitle,
   sendMessageStream,
 } from '../../services/api';
+
+// Chat 页面快捷按键
+const CHAT_QUICK_ACTIONS = [
+  '什么是LLM Agent？',
+  'Agent记忆系统如何搭建？',
+  '大模型+AR有哪些有意思的场景应用？',
+];
 
 const AppLayout = ({ children }) => {
   const dispatch = useDispatch();
@@ -189,7 +197,7 @@ const AppLayout = ({ children }) => {
       conversationId,
       message,
       thinkingEnabled,
-      modelProvider || 'kimi',
+      modelProvider || 'qwen3-235b',
       (thinking) => dispatch(appendStreamingThinking(thinking)),
       (content) => dispatch(appendStreamingContent(content)),
       async () => {
@@ -368,24 +376,46 @@ const AppLayout = ({ children }) => {
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto px-6 pt-20 pb-40 space-y-8 no-scrollbar scroll-smooth">
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+                <div className="text-center mb-4">
+                  <h3 className="font-cinematic text-xl tracking-widest text-slate-300 mb-2">CONSTRUCT</h3>
+                  <p className="text-sm font-tech text-slate-500">开始你的对话</p>
+                </div>
+              </div>
+            ) : null}
             <ChatArea />
           </div>
 
           {/* --- INPUT ZONE (Sticky Bottom) --- */}
           <div className="absolute bottom-0 left-0 right-0 p-6 z-30">
-            {/* 模型选择器 - 放在输入框上方 */}
-            {currentConversationId && (
-              <div className="mb-4 flex items-center justify-end">
-                <div className="flex items-center gap-3 text-xs font-tech text-slate-400">
-                  <span>MODEL:</span>
-                  <ModelSelector />
-                </div>
+            {/* 快捷按键 - 放在输入框上方 */}
+            {messages.length === 0 && (
+              <div className="mb-4">
+                <QuickActions
+                  actions={CHAT_QUICK_ACTIONS}
+                  onActionClick={handleSendMessage}
+                  disabled={isStreaming}
+                  theme="chat"
+                />
               </div>
             )}
-            <InputContainer
-              onSend={handleSendMessage}
-              disabled={isStreaming}
-            />
+            
+            {/* 输入框容器包装，包含模型选择器 */}
+            <div className="flex items-end gap-3">
+              {/* 模型选择器 - 放在输入框左侧 */}
+              {currentConversationId && (
+                <div className="flex-shrink-0">
+                  <ModelSelector />
+                </div>
+              )}
+              <div className="flex-1">
+                <InputContainer
+                  onSend={handleSendMessage}
+                  disabled={isStreaming}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

@@ -28,8 +28,21 @@ async def agent_chat_stream(
     """
     智能体流式聊天端点（SSE）
     支持工具调用的智能对话
+    
+    Args:
+        chat_request: 聊天请求，包含 conversation_id, message, model_provider 等
     """
     user_id = get_or_create_user_id(request, response)
+    
+    # 获取模型提供商（使用默认值如果未指定）
+    model_provider = chat_request.model_provider or "moonshotai/kimi-k2.5"
+    
+    logger.info(
+        "agent_stream_request",
+        conversation_id=chat_request.conversation_id,
+        model_provider=model_provider,
+        message_length=len(chat_request.message)
+    )
     
     async def event_generator():
         """SSE 事件生成器"""
@@ -37,7 +50,8 @@ async def agent_chat_stream(
             async for chunk_data in agent_service.chat_stream(
                 conversation_id=chat_request.conversation_id,
                 user_message=chat_request.message,
-                user_id=user_id
+                user_id=user_id,
+                model_provider=model_provider
             ):
                 # 将数据编码为 JSON 并发送
                 data = json.dumps(chunk_data, ensure_ascii=False)
@@ -45,6 +59,11 @@ async def agent_chat_stream(
                 
         except Exception as e:
             # 发送错误信息
+            logger.error(
+                "agent_stream_error",
+                conversation_id=chat_request.conversation_id,
+                error=str(e)
+            )
             error_data = json.dumps({
                 "type": "error",
                 "content": str(e)

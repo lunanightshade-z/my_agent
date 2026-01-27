@@ -14,7 +14,7 @@ const chatSlice = createSlice({
     messages: [],                         // 当前会话的消息列表
     isStreaming: false,                   // 是否正在接收流式响应
     thinkingEnabled: false,               // thinking 模式开关
-    modelProvider: 'kimi',                // 模型提供商（默认 kimi）
+    modelProvider: 'qwen3-235b',  // 模型标识符（默认 Qwen 235B）
     streamingContent: '',                 // 流式接收中的内容
     streamingThinking: '',                // 流式接收中的思考过程
     isThinking: false,                    // 是否正在思考阶段

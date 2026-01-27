@@ -29,7 +29,7 @@ class ChatService:
         user_message: str,
         thinking_enabled: bool = False,
         user_id: str = None,
-        model_provider: str = "kimi"
+        model_provider: str = "moonshotai/kimi-k2.5"
     ) -> AsyncGenerator[Dict[str, str], None]:
         """
         流式聊天
@@ -39,7 +39,7 @@ class ChatService:
             user_message: 用户消息
             thinking_enabled: 是否启用思考模式
             user_id: 用户ID（用于验证会话所有权）
-            model_provider: 模型提供商（"zhipu" 或 "kimi"）
+            model_provider: 模型标识符（"zhipu" 或 openrouter 模型名称如 "moonshotai/kimi-k2.5"）
             
         Yields:
             流式响应数据
@@ -78,8 +78,9 @@ class ChatService:
             for msg in recent_messages
         ]
         
-        # 获取对应的 LLM 客户端
+        # 获取对应的 LLM 客户端和模型名称
         llm_client = LLMFactory.get_client(model_provider)
+        model_name = LLMFactory.get_model_name(model_provider)
         
         # 调用 LLM 流式响应
         thinking_mode = "enabled" if thinking_enabled else "disabled"
@@ -87,7 +88,7 @@ class ChatService:
         full_response = ""
         
         try:
-            async for chunk_data in llm_client.chat_stream(conversations, thinking_mode):
+            async for chunk_data in llm_client.chat_stream(conversations, thinking_mode, model=model_name):
                 chunk_type = chunk_data.get("type")
                 chunk_content = chunk_data.get("content", "")
                 
@@ -136,7 +137,7 @@ class ChatService:
             )
             yield {"type": "error", "content": f"处理失败: {str(e)}"}
     
-    async def generate_title(self, conversation_id: int, first_message: str, user_id: str = None, model_provider: str = "kimi") -> str:
+    async def generate_title(self, conversation_id: int, first_message: str, user_id: str = None, model_provider: str = "moonshotai/kimi-k2.5") -> str:
         """
         生成会话标题
         
@@ -150,8 +151,9 @@ class ChatService:
             生成的标题
         """
         try:
-            # 获取对应的 LLM 客户端
+            # 获取对应的 LLM 客户端和模型名称
             llm_client = LLMFactory.get_client(model_provider)
+            model_name = LLMFactory.get_model_name(model_provider)
             title = await llm_client.generate_title(first_message)
             
             # 更新会话标题

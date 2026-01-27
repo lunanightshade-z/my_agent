@@ -26,6 +26,7 @@ import {
   setMessages,
   setConversations,
   setCurrentConversation,
+  setModelProvider,
 } from '../store/store';
 import { 
   sendAgentMessageStream, 
@@ -39,6 +40,11 @@ import MarkdownRenderer from '../components/MarkdownRenderer';
 import { ThemeProvider } from '../components/shared/ThemeProvider';
 import { agentTheme } from '../styles/themes';
 import ToolCallCard from '../components/chat/ToolCallCard/ToolCallCard';
+import AgentModelSelector from '../components/AgentModelSelector';
+
+// Agent 默认模型
+const AGENT_DEFAULT_MODEL = 'qwen3-235b';
+import QuickActions from '../components/QuickActions.jsx';
 
 // --- 组件：背景动态流体 ---
 // 使用纯CSS动画模拟流动的空气感背景
@@ -50,6 +56,12 @@ const AmbientBackground = () => (
   </div>
 );
 
+// Agent 页面快捷按键
+const AGENT_QUICK_ACTIONS = [
+  '根据最近的新闻写一篇日报，然后根据内容给出你的独特的有新意的总结。',
+  '总结近期的民生相关的新闻并给出锐评。',
+];
+
 // --- 主应用组件 ---
 export default function Agent() {
   const dispatch = useDispatch();
@@ -59,11 +71,18 @@ export default function Agent() {
     currentConversationId, 
     messages, 
     isStreaming, 
-    conversations 
+    conversations,
+    modelProvider
   } = useSelector((state) => state.chat);
   
-  // 页面挂载时，清空不属于 agent 类型的会话状态
+  // 页面挂载时，清空不属于 agent 类型的会话状态，并设置 Agent 默认模型
   useEffect(() => {
+    // 设置 Agent 默认模型（如果还没设置过或是 Chat 默认模型）
+    if (!modelProvider || modelProvider === 'moonshotai/kimi-k2.5') {
+      // 如果没有模型或者是 Chat 默认模型（Kimi），切换到 Agent 默认模型（Qwen）
+      dispatch(setModelProvider(AGENT_DEFAULT_MODEL));
+    }
+    
     if (currentConversationId) {
       const currentConv = conversations.find(c => c.id === currentConversationId);
       if (!currentConv || currentConv.conversation_type !== 'agent') {
@@ -175,8 +194,10 @@ export default function Agent() {
   }, [currentConversationId, conversations, dispatch, isStreaming]);
 
   // 发送消息
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isStreaming) return;
+  const handleSendMessage = async (messageText) => {
+    // 如果传入了消息文本，使用它；否则使用 inputValue
+    const message = messageText || inputValue;
+    if (!message.trim() || isStreaming) return;
 
     let conversationId = currentConversationId;
     
@@ -198,9 +219,11 @@ export default function Agent() {
       }
     }
 
-    const message = inputValue;
     const isFirstMessage = messages.length === 0;
-    setInputValue('');
+    // 只有在使用 inputValue 时才清空输入框
+    if (!messageText) {
+      setInputValue('');
+    }
     
     // 添加用户消息
     dispatch(addUserMessage(message));
@@ -211,9 +234,11 @@ export default function Agent() {
     console.log('开始流式响应');
 
     // 使用智能体API（支持工具调用）
+    // 参数顺序：conversationId, message, modelProvider, onToolCall, onToolResult, onChunk, onDone, onError
     sendAgentMessageStream(
       conversationId,
       message,
+      modelProvider || AGENT_DEFAULT_MODEL, // 模型选择（默认 Qwen 235B）
       // onToolCall - 工具调用回调
       (toolCallData) => {
         console.log('🔧 [API] 收到工具调用:', {
@@ -543,6 +568,18 @@ export default function Agent() {
               blur-xl
             "></div>
             
+            {/* 快捷按键 - 放在输入框上方 */}
+            {messages.length === 0 && (
+              <div className="mb-3">
+                <QuickActions
+                  actions={AGENT_QUICK_ACTIONS}
+                  onActionClick={handleSendMessage}
+                  disabled={isStreaming}
+                  theme="agent"
+                />
+              </div>
+            )}
+            
             <div className="
               relative w-full p-3 bg-gradient-to-br from-white/90 via-white/85 to-white/80 
               backdrop-blur-xl rounded-[2.5rem] 
@@ -562,6 +599,10 @@ export default function Agent() {
               <div className="relative z-10 flex flex-col gap-2">
                 {/* 输入框 */}
                 <div className="flex items-end gap-2 px-2">
+                  {/* 模型选择器 - 放在输入框左侧 */}
+                  <div className="flex-shrink-0">
+                    <AgentModelSelector />
+                  </div>
                   <button className="
                     p-3 rounded-full 
                     text-slate-400 hover:text-teal-500 

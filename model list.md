@@ -3,7 +3,9 @@
 glm-4.7
 
 # openrouter系列
-google/gemini-2.5-flash-lite
+## 思考模型
+z-ai/glm-4.7-flash
+bytedance-seed/seed-1.6-flash
 moonshotai/kimi-k2.5
 deepseek/deepseek-v3.2
-qwen/qwen3-next-80b-a3b-instruct:free
+google/gemini-3-flash-preview
