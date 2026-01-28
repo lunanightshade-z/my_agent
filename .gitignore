@@ -31,6 +31,9 @@ backend/.venv/
 *.sqlite3
 chat_history.db
 
+# Data / cache（运行时数据与缓存，不纳入版本库）
+data/
+
 # Environment
 .env
 .env.local
