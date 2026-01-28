@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     
     # ==================== LLM 配置 ====================
     ZHIPU_API_KEY: str
-    LLM_MODEL: str = "glm-4-flash"
+    LLM_MODEL: str = "glm-4.7"
     LLM_THINKING_MODEL: str = "glm-4.7"
     LLM_REQUEST_TIMEOUT: int = 30  # 秒
     LLM_MAX_RETRIES: int = 3

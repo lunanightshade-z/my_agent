@@ -161,7 +161,7 @@ export const AGENT_MODELS = [
  * 注意：用户未指定 Agent 默认模型，暂时保持 qwen3-235b
  * 如需修改，请更新此常量
  */
-export const AGENT_DEFAULT_MODEL = 'z-ai/glm-4.7-flash';
+export const AGENT_DEFAULT_MODEL = 'google/gemini-3-flash-preview';
 
 // ==================== 工具函数 ====================
 

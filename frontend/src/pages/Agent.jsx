@@ -105,6 +105,7 @@ export default function Agent() {
   const [isGeneratingCache, setIsGeneratingCache] = useState(false);
   const messagesEndRef = useRef(null);
   const skipNextLoadRef = useRef(false);
+  const justFinishedStreamingRef = useRef(false); // 标记是否刚刚完成流式输出
 
   // 自动滚动到底部
   const scrollToBottom = () => {
@@ -138,11 +139,31 @@ export default function Agent() {
     loadConversations();
   }, [dispatch, currentConversationId]);
 
+  // 使用 ref 跟踪上一次的会话ID，只在会话切换时重新加载
+  const prevConversationIdRef = useRef(currentConversationId);
+  
   // 加载选中会话的消息
   useEffect(() => {
+    // 如果正在流式输出，不重新加载
     if (isStreaming) {
       return;
     }
+    
+    // 如果刚刚完成流式输出，不重新加载（避免覆盖内存中的工具调用信息）
+    if (justFinishedStreamingRef.current) {
+      console.log('🔒 [Agent] 跳过重新加载 - 刚刚完成流式输出，保留内存中的工具调用信息');
+      justFinishedStreamingRef.current = false; // 重置标志
+      return;
+    }
+    
+    // 如果会话ID没有变化，不重新加载
+    if (prevConversationIdRef.current === currentConversationId) {
+      return;
+    }
+    
+    // 更新上一次的会话ID
+    prevConversationIdRef.current = currentConversationId;
+    
     if (currentConversationId) {
       if (skipNextLoadRef.current) {
         skipNextLoadRef.current = false;
@@ -150,6 +171,7 @@ export default function Agent() {
       }
       const loadMessages = async () => {
         try {
+          console.log('📥 [Agent] 加载会话消息:', currentConversationId);
           // 验证当前会话是否属于 agent 类型
           const currentConv = conversations.find(c => c.id === currentConversationId);
           if (!currentConv) {
@@ -168,6 +190,7 @@ export default function Agent() {
           }
           
           const msgs = await getConversationMessages(currentConversationId);
+          console.log('✅ [Agent] 消息加载完成:', msgs.length, '条消息');
           // 转换消息格式，确保格式统一
           const formattedMessages = msgs.map(msg => ({
             role: msg.role,
@@ -190,6 +213,7 @@ export default function Agent() {
     } else {
       // 如果没有选中会话，清空消息
       dispatch(setMessages([]));
+      prevConversationIdRef.current = null;
     }
   }, [currentConversationId, conversations, dispatch, isStreaming]);
 
@@ -270,6 +294,9 @@ export default function Agent() {
       // onDone - 完成回调
       async () => {
         console.log('🏁 [API] 流式响应完成');
+        // 标记刚刚完成流式输出，防止立即重新加载消息（避免覆盖内存中的工具调用信息）
+        justFinishedStreamingRef.current = true;
+        console.log('🔒 [Agent] 设置 justFinishedStreamingRef = true，防止重新加载消息');
         dispatch(endStreaming());
         if (isFirstMessage) {
           try {
@@ -303,6 +330,9 @@ export default function Agent() {
 
   // 切换会话
   const handleConversationClick = (convId) => {
+    // 切换会话时重置流式输出完成标志和上一次会话ID
+    justFinishedStreamingRef.current = false;
+    prevConversationIdRef.current = null; // 重置，确保新会话会加载消息
     dispatch(setCurrentConversation(convId));
   };
 
