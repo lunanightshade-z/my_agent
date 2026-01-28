@@ -24,6 +24,7 @@ wheels/
 *.egg
 backend/.venv/
 .cursor/
+scripts/
 
 # Database
 *.db

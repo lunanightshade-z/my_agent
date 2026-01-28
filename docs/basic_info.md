@@ -7,6 +7,8 @@
 - Chat 页面：简单聊天功能
 - Agent 页面：AI日报智能体功能
 
+# 环境
+cd backend && source .venv/bin/activate && python3 scripts/db_cli.py
 
 # docker 
 docker compose up -d --build 

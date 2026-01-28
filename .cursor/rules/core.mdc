@@ -1,7 +1,6 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
-
 ## 项目概述
 本项目是一个LLM Agent，主要支持通过对话完成数据库查询及报告生成。
 
