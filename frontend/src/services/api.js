@@ -240,13 +240,15 @@ export const generateRSSCache = async () => {
  * @param {number} conversationId - 会话 ID
  * @param {string} message - 用户消息
  * @param {string} modelProvider - 模型提供商（如 "moonshotai/kimi-k2.5"）
+ * @param {boolean} thinkingEnabled - 是否启用思考模式
  * @param {function} onToolCall - 工具调用回调
  * @param {function} onToolResult - 工具结果回调
+ * @param {function} onThinking - 思考过程回调
  * @param {function} onChunk - 内容块回调
  * @param {function} onDone - 完成回调
  * @param {function} onError - 错误回调
  */
-export const sendAgentMessageStream = (conversationId, message, modelProvider, onToolCall, onToolResult, onChunk, onDone, onError) => {
+export const sendAgentMessageStream = (conversationId, message, modelProvider, thinkingEnabled, onToolCall, onToolResult, onThinking, onChunk, onDone, onError) => {
   const url = `${API_BASE_URL}/agent/stream`;
   
   let buffer = '';
@@ -259,7 +261,7 @@ export const sendAgentMessageStream = (conversationId, message, modelProvider, o
     body: JSON.stringify({
       conversation_id: conversationId,
       message: message,
-      thinking_enabled: false, // 智能体不使用thinking模式
+      thinking_enabled: thinkingEnabled || false, // 是否启用思考模式
       model_provider: modelProvider || 'qwen3-235b', // 默认使用 Qwen 235B (自建推荐)
     }),
   })
@@ -324,7 +326,13 @@ export const sendAgentMessageStream = (conversationId, message, modelProvider, o
               // 添加日志记录
               console.log('📡 [SSE Parser] 收到数据类型:', parsed.type);
               
-              if (parsed.type === 'tool_call') {
+              if (parsed.type === 'thinking') {
+                // 思考过程
+                console.log('🧠 [SSE Parser] 思考过程:', {
+                  content_length: parsed.content ? parsed.content.length : 0
+                });
+                onThinking && onThinking(parsed.content);
+              } else if (parsed.type === 'tool_call') {
                 // 工具调用
                 console.log('🔧 [SSE Parser] 解析工具调用:', {
                   tool_name: parsed.tool_name,

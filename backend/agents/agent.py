@@ -79,7 +79,8 @@ class Agent:
     def chat_stream(
         self,
         messages: List[Dict[str, str]],
-        use_tools: bool = True
+        use_tools: bool = True,
+        thinking_enabled: bool = False
     ) -> Generator[Dict[str, Any], None, None]:
         """
         流式聊天（支持工具调用）
@@ -87,11 +88,12 @@ class Agent:
         Args:
             messages: 对话历史
             use_tools: 是否启用工具调用
+            thinking_enabled: 是否启用思考模式
             
         Yields:
             流式输出的chunk，格式:
             {
-                "type": "text" | "tool_call" | "tool_result" | "done",
+                "type": "text" | "tool_call" | "tool_result" | "done" | "thinking",
                 "content": str,
                 "tool_name": str (仅type=tool_call时),
                 "tool_arguments": dict (仅type=tool_call时),
@@ -141,17 +143,28 @@ class Agent:
             
             # 调用LLM
             try:
-                completion = self.client.chat.completions.create(
-                    model=self.config.model,
-                    messages=full_messages,
-                    tools=tools,
-                    temperature=self.config.temperature,
-                    stream=True
-                )
+                # 构建请求参数
+                request_params = {
+                    "model": self.config.model,
+                    "messages": full_messages,
+                    "tools": tools,
+                    "temperature": self.config.temperature,
+                    "stream": True,
+                }
+                
+                # 如果启用思考模式，添加相关参数
+                # 注意：不是所有模型都支持thinking模式，这里只是示例
+                if thinking_enabled:
+                    # DeepSeek等模型支持reasoning_content字段来获取思考过程
+                    # 其他模型可能需要不同的参数
+                    request_params["stream_options"] = {"include_usage": False}
+                
+                completion = self.client.chat.completions.create(**request_params)
                 
                 # 收集完整的响应用于工具调用
                 collected_messages = []
                 collected_tool_calls = []
+                collected_thinking = []  # 收集思考过程
                 current_tool_call = None
                 
                 # 流式处理响应
@@ -161,6 +174,15 @@ class Agent:
                     
                     delta = chunk.choices[0].delta
                     finish_reason = chunk.choices[0].finish_reason
+                    
+                    # 处理思考过程（如果模型支持）
+                    # DeepSeek的thinking在reasoning_content字段中
+                    if thinking_enabled and hasattr(delta, 'reasoning_content') and delta.reasoning_content:
+                        collected_thinking.append(delta.reasoning_content)
+                        yield {
+                            "type": "thinking",
+                            "content": delta.reasoning_content
+                        }
                     
                     # 处理文本内容
                     if delta.content:

@@ -25,8 +25,14 @@ const ToolCallCard = ({ toolCall, toolResult, isExecuting = false }) => {
   const toolArguments = toolCall?.tool_arguments || {};
   const resultContent = toolResult?.content || toolResult || '';
   const hasResult = !!toolResult && (toolResult.content !== undefined || typeof toolResult === 'string');
+  
+  // 修复：更准确地判断是否为错误
+  // 只有明确标记为error类型，或者以"工具执行失败"、"错误:"开头的才判定为失败
   const isError = toolResult?.type === 'error' || 
-                  (typeof resultContent === 'string' && (resultContent.includes('失败') || resultContent.includes('错误')));
+                  (typeof resultContent === 'string' && 
+                   (resultContent.startsWith('工具执行失败') || 
+                    resultContent.startsWith('错误:') ||
+                    resultContent.startsWith('⚠️')));
 
   // 解析结果内容（可能是JSON字符串）
   let parsedResult = null;

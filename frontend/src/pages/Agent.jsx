@@ -19,6 +19,7 @@ import {
   addUserMessage,
   startStreaming,
   appendStreamingContent,
+  appendStreamingThinking,
   addToolCall,
   updateToolResult,
   endStreaming,
@@ -27,6 +28,7 @@ import {
   setConversations,
   setCurrentConversation,
   setModelProvider,
+  toggleThinking,
 } from '../store/store';
 import { 
   sendAgentMessageStream, 
@@ -70,7 +72,8 @@ export default function Agent() {
     messages, 
     isStreaming, 
     conversations,
-    modelProvider
+    modelProvider,
+    thinkingEnabled
   } = useSelector((state) => state.chat);
   
   // 页面挂载时，清空不属于 agent 类型的会话状态，并设置 Agent 默认模型
@@ -258,11 +261,12 @@ export default function Agent() {
     console.log('开始流式响应');
 
     // 使用智能体API（支持工具调用）
-    // 参数顺序：conversationId, message, modelProvider, onToolCall, onToolResult, onChunk, onDone, onError
+    // 参数顺序：conversationId, message, modelProvider, thinkingEnabled, onToolCall, onToolResult, onThinking, onChunk, onDone, onError
     sendAgentMessageStream(
       conversationId,
       message,
       modelProvider || AGENT_DEFAULT_MODEL, // 模型选择（默认 Qwen 235B）
+      thinkingEnabled, // thinking模式
       // onToolCall - 工具调用回调
       (toolCallData) => {
         console.log('🔧 [API] 收到工具调用:', {
@@ -285,6 +289,11 @@ export default function Agent() {
         console.log('✅ [API] 工具结果完整数据:', toolResultData);
         // 更新工具调用结果
         dispatch(updateToolResult(toolResultData));
+      },
+      // onThinking - 思考过程回调
+      (thinkingContent) => {
+        console.log('🧠 [API] 收到思考内容 (长度: ' + thinkingContent.length + ')');
+        dispatch(appendStreamingThinking(thinkingContent));
       },
       // onChunk - 内容回调
       (content) => {
@@ -472,6 +481,28 @@ export default function Agent() {
               </span>
             </div>
             <div className="flex items-center gap-3">
+              {/* Thinking 模式开关 */}
+              <button
+                onClick={() => dispatch(toggleThinking())}
+                className={`
+                  px-3 py-1.5 rounded-lg
+                  border
+                  text-sm font-medium
+                  transition-all duration-200
+                  flex items-center gap-1.5
+                  hover:scale-105 active:scale-95
+                  ${thinkingEnabled 
+                    ? 'bg-teal-500/10 hover:bg-teal-500/20 border-teal-300/50 hover:border-teal-400/70 text-teal-700' 
+                    : 'bg-white/50 hover:bg-white/70 border-slate-200/50 hover:border-slate-300/70 text-slate-600 hover:text-slate-700'}
+                `}
+                title={thinkingEnabled ? '关闭思考模式' : '开启思考模式'}
+              >
+                <span>🧠</span>
+                <span>思考</span>
+                {thinkingEnabled && (
+                  <span className="ml-1 text-xs">✓</span>
+                )}
+              </button>
               <div className="flex items-center gap-2">
                 <span className={`h-2 w-2 rounded-full ${isStreaming ? 'bg-green-400 animate-pulse' : 'bg-green-400'}`}></span>
                 <span className="text-xs text-slate-400 font-medium">{isStreaming ? 'Thinking...' : 'Online'}</span>
@@ -548,6 +579,21 @@ export default function Agent() {
                             </div>
                           ) : (
                             <>
+                              {/* 思考过程 */}
+                              {msg.thinking && (
+                                <div className="mb-3 p-3 bg-teal-50/50 border border-teal-100 rounded-xl">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-sm font-medium text-teal-700">🧠 思考过程</span>
+                                  </div>
+                                  <div className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
+                                    {msg.thinking}
+                                    {msg.isThinking && (
+                                      <span className="inline-block w-2 h-4 ml-1 bg-teal-500 animate-pulse" />
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              
                               {/* 工具调用列表 */}
                               {msg.toolCalls && msg.toolCalls.length > 0 && (
                                 <div className="mb-4 space-y-2">

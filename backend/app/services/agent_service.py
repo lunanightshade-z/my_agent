@@ -266,7 +266,8 @@ class AgentService:
         conversation_id: int,
         user_message: str,
         user_id: str = None,
-        model_provider: str = None
+        model_provider: str = None,
+        thinking_enabled: bool = False
     ) -> AsyncGenerator[Dict[str, str], None]:
         """
         智能体流式聊天
@@ -276,6 +277,7 @@ class AgentService:
             user_message: 用户消息
             user_id: 用户ID（用于验证会话所有权）
             model_provider: 模型标识符（如 "moonshotai/kimi-k2.5"）
+            thinking_enabled: 是否启用思考模式
             
         Yields:
             流式响应数据
@@ -324,7 +326,7 @@ class AgentService:
             agent = self._get_agent(model_provider)
             
             for chunk in self._process_agent_stream(
-                agent.chat_stream(messages),
+                agent.chat_stream(messages, thinking_enabled=thinking_enabled),
                 tool_calls_info
             ):
                 if chunk.get("type") == "error":
@@ -383,7 +385,11 @@ class AgentService:
             chunk_type = chunk.get("type")
             chunk_content = chunk.get("content", "")
             
-            if chunk_type == "text":
+            if chunk_type == "thinking":
+                # 思考过程
+                yield {"type": "thinking", "content": chunk_content}
+            
+            elif chunk_type == "text":
                 yield {"type": "delta", "content": chunk_content}
             
             elif chunk_type == "tool_call":

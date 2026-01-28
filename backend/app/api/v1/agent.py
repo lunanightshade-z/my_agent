@@ -51,7 +51,8 @@ async def agent_chat_stream(
                 conversation_id=chat_request.conversation_id,
                 user_message=chat_request.message,
                 user_id=user_id,
-                model_provider=model_provider
+                model_provider=model_provider,
+                thinking_enabled=chat_request.thinking_enabled
             ):
                 # 将数据编码为 JSON 并发送
                 data = json.dumps(chunk_data, ensure_ascii=False)
